@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
 export async function GET(
-  request: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
@@ -10,14 +10,14 @@ export async function GET(
 
     if (!slug) {
       return NextResponse.json(
-        { error: "Product slug is required" },
+        { error: "Missing slug parameter" },
         { status: 400 }
       );
     }
 
     const product = await prisma.product.findUnique({
       where: {
-        slug,
+        slug: slug,
       },
       include: {
         category: true,
@@ -30,7 +30,12 @@ export async function GET(
 
     return NextResponse.json(product);
   } catch (error) {
-    console.error("[PRODUCT_GET]", error);
+    // Safely handle the error logging
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error("Error fetching product:", errorMessage);
+
+    // Return a properly structured error response
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
