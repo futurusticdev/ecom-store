@@ -1,25 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { Product, Category } from "@prisma/client";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Heart,
-  Expand,
-  X,
-} from "lucide-react";
+import type { Product, ProductWithDetails } from "@/types";
+import { Heart, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { ProductCard } from "@/components/ui/product-card";
-
-type ProductWithDetails = Product & {
-  category: Category;
-  images: string[];
-  sizes: string[];
-  inStock: boolean;
-  slug: string;
-};
+import { generateProductImages } from "@/lib/utils";
 
 interface PageProps {
   params: { slug: string };
@@ -41,9 +27,8 @@ export default function ProductPage({ params }: PageProps) {
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [openSection, setOpenSection] = useState<string | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -51,6 +36,26 @@ export default function ProductPage({ params }: PageProps) {
       try {
         const response = await fetch(`/api/products/${slug}`);
         const data = await response.json();
+
+        // Generate Unsplash images if no images are available
+        if (!data.images || data.images.length === 0) {
+          data.images = generateProductImages(data.id);
+        }
+
+        // Validate image URLs
+        const validImages = await Promise.all(
+          data.images.map(async (url: string) => {
+            try {
+              const res = await fetch(url, { method: "HEAD" });
+              return res.ok ? url : null;
+            } catch (error) {
+              return null;
+            }
+          })
+        );
+
+        data.images = validImages.filter(Boolean) as string[];
+
         setProduct(data);
         if (data.sizes.length > 0) {
           setSelectedSize(data.sizes[0]);
@@ -61,11 +66,36 @@ export default function ProductPage({ params }: PageProps) {
           `/api/products?categoryId=${data.categoryId}&limit=4`
         );
         const relatedData = await relatedResponse.json();
+
+        // Add Unsplash images to related products if needed
+        const relatedWithImages = await Promise.all(
+          relatedData.items.map(async (p: Product) => {
+            const images = p.images?.length
+              ? p.images
+              : generateProductImages(p.id);
+
+            // Validate related product images
+            const validImages = await Promise.all(
+              images.map(async (url: string) => {
+                try {
+                  const res = await fetch(url, { method: "HEAD" });
+                  return res.ok ? url : null;
+                } catch (error) {
+                  return null;
+                }
+              })
+            );
+
+            return { ...p, images: validImages.filter(Boolean) as string[] };
+          })
+        );
+
         setRelatedProducts(
-          relatedData.items.filter((p: Product) => p.id !== data.id)
+          relatedWithImages.filter((p: Product) => p.id !== data.id)
         );
       } catch (error) {
-        console.error("Error fetching product:", error);
+        // Handle error state here if needed
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -73,6 +103,66 @@ export default function ProductPage({ params }: PageProps) {
 
     fetchProduct();
   }, [slug]);
+
+  const handleImageError = (index: number) => {
+    // Update the product images array to remove the failed image
+    if (product) {
+      const updatedImages = [...product.images];
+      updatedImages.splice(index, 1);
+      setProduct({ ...product, images: updatedImages });
+    }
+  };
+
+  const nextImage = useCallback(() => {
+    if (product?.images.length) {
+      setCurrentImageIndex((prev) =>
+        prev === product.images.length - 1 ? 0 : prev + 1
+      );
+    }
+  }, [product?.images.length]);
+
+  const previousImage = useCallback(() => {
+    if (product?.images.length) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? product.images.length - 1 : prev - 1
+      );
+    }
+  }, [product?.images.length]);
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomed) return;
+
+    const { left, top, width, height } =
+      event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - left) / width) * 100;
+    const y = ((event.clientY - top) / height) * 100;
+
+    setMousePosition({ x, y });
+  };
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (isLightboxOpen) {
+        switch (event.key) {
+          case "ArrowLeft":
+            previousImage();
+            break;
+          case "ArrowRight":
+            nextImage();
+            break;
+          case "Escape":
+            setIsLightboxOpen(false);
+            break;
+        }
+      }
+    },
+    [isLightboxOpen, nextImage, previousImage]
+  );
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
   if (loading) {
     return (
@@ -90,76 +180,98 @@ export default function ProductPage({ params }: PageProps) {
     );
   }
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === product.images.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const previousImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? product.images.length - 1 : prev - 1
-    );
-  };
-
-  const toggleSection = (section: string) => {
-    setOpenSection(openSection === section ? null : section);
-  };
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!isZoomed) return;
-
-    const { left, top, width, height } =
-      event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - left) / width) * 100;
-    const y = ((event.clientY - top) / height) * 100;
-
-    setMousePosition({ x, y });
-  };
-
   return (
-    <div className="bg-white">
+    <div className="bg-white relative">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
           {/* Product Images */}
           <div className="space-y-4">
-            <div className="relative aspect-square overflow-hidden bg-gray-100">
-              {product.images.length > 0 ? (
-                <Image
-                  src={product.images[currentImageIndex]}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  priority
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center bg-gray-100">
-                  <p className="text-gray-500">No image available</p>
-                </div>
-              )}
+            <div
+              className="relative w-full pt-[100%] group cursor-zoom-in"
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setIsZoomed(true)}
+              onMouseLeave={() => setIsZoomed(false)}
+            >
+              <div className="absolute inset-0">
+                {product.images.length > 0 ? (
+                  <>
+                    <Image
+                      src={product.images[currentImageIndex]}
+                      alt={product.name}
+                      fill
+                      className={`object-cover transition-all duration-300 ${
+                        isZoomed ? "opacity-0" : "opacity-100"
+                      }`}
+                      quality={90}
+                      priority
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      onError={() => handleImageError(currentImageIndex)}
+                    />
+                    {isZoomed && (
+                      <div
+                        className="absolute inset-0 overflow-hidden"
+                        style={{
+                          backgroundImage: `url(${product.images[currentImageIndex]})`,
+                          backgroundPosition: `${mousePosition.x}% ${mousePosition.y}%`,
+                          backgroundSize: "200%",
+                          backgroundRepeat: "no-repeat",
+                        }}
+                      />
+                    )}
+                    <button
+                      onClick={() => setIsLightboxOpen(true)}
+                      className="absolute top-4 right-4 p-2 bg-white/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-110 transform duration-200"
+                      aria-label="Open fullscreen view"
+                    >
+                      <ZoomIn className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={previousImage}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-110 transform duration-200"
+                      aria-label="Previous image"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white hover:scale-110 transform duration-200"
+                      aria-label="Next image"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex h-full items-center justify-center bg-gray-100">
+                    <p className="text-gray-500">No image available</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Thumbnail Gallery */}
             {product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
-                {product.images.map((image, index) => (
+                {product.images.map((image: string, index: number) => (
                   <button
                     key={image}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`relative aspect-square overflow-hidden rounded-lg ${
+                    className={`relative w-full pt-[100%] overflow-hidden rounded-lg transition-all duration-300 ${
                       currentImageIndex === index
                         ? "ring-2 ring-black"
-                        : "ring-1 ring-gray-200"
+                        : "ring-1 ring-gray-200 hover:ring-gray-400"
                     }`}
                   >
-                    <Image
-                      src={image}
-                      alt={`${product.name} - Image ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 25vw, 12vw"
-                    />
+                    <div className="absolute inset-0">
+                      <Image
+                        src={image}
+                        alt={`${product.name} - Image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        quality={60}
+                        sizes="(max-width: 768px) 25vw, 12vw"
+                        onError={() => handleImageError(index)}
+                      />
+                    </div>
                   </button>
                 ))}
               </div>
@@ -210,7 +322,7 @@ export default function ProductPage({ params }: PageProps) {
                 </div>
 
                 <div className="grid grid-cols-4 gap-4 mt-4">
-                  {product.sizes.map((size) => (
+                  {product.sizes.map((size: string) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
@@ -291,6 +403,50 @@ export default function ProductPage({ params }: PageProps) {
           </div>
         )}
       </div>
+
+      {/* Lightbox - Moved outside the grid layout */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-[100] overflow-hidden">
+          <div
+            className="absolute inset-0 bg-black/90"
+            onClick={() => setIsLightboxOpen(false)}
+          />
+          <div className="relative h-full w-full flex items-center justify-center p-4">
+            <button
+              onClick={() => setIsLightboxOpen(false)}
+              className="absolute top-4 right-4 p-2 text-white hover:text-gray-300 hover:scale-110 transform duration-200 z-[110]"
+              aria-label="Close fullscreen view"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <button
+              onClick={previousImage}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white hover:text-gray-300 hover:scale-110 transform duration-200 z-[110]"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="w-8 h-8" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white hover:text-gray-300 hover:scale-110 transform duration-200 z-[110]"
+              aria-label="Next image"
+            >
+              <ChevronRight className="w-8 h-8" />
+            </button>
+            <div className="relative w-full h-full max-w-6xl max-h-[90vh] mx-auto">
+              <Image
+                src={product.images[currentImageIndex]}
+                alt={product.name}
+                fill
+                className="object-contain"
+                quality={100}
+                priority
+                sizes="100vw"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

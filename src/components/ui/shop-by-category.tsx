@@ -40,14 +40,17 @@ export function ShopByCategory() {
               href={category.href}
               className="group relative aspect-[4/5] overflow-hidden rounded-lg bg-gray-100"
             >
-              {/* Image */}
-              <Image
-                src={category.image}
-                alt={category.name}
-                fill
-                className="object-cover object-center transition duration-300 group-hover:scale-105"
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              />
+              {/* Image Container */}
+              <div className="relative h-full w-full">
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  priority
+                  className="object-cover object-center transition duration-300 group-hover:scale-105"
+                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                />
+              </div>
 
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/20 transition-opacity group-hover:bg-black/30" />

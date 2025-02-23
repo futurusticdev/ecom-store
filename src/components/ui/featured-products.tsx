@@ -1,101 +1,67 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+"use client";
+
+import { useEffect, useState } from "react";
+import { ProductCard } from "./product-card";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
-  href: string;
+  description: string;
   price: number;
-  image: string;
+  categoryId: string;
+  images: string[];
+  sizes: string[];
+  inStock: boolean;
+  slug: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Designer Silk Dress",
-    href: "/products/designer-silk-dress",
-    price: 599.0,
-    image:
-      "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?q=80&w=2668&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Leather Tote Bag",
-    href: "/products/leather-tote-bag",
-    price: 899.0,
-    image:
-      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=2669&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    name: "Wool Blend Suit",
-    href: "/products/wool-blend-suit",
-    price: 1299.0,
-    image:
-      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=2680&auto=format&fit=crop",
-  },
-  {
-    id: 4,
-    name: "Gold Watch",
-    href: "/products/gold-watch",
-    price: 2499.0,
-    image:
-      "https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?q=80&w=2670&auto=format&fit=crop",
-  },
-];
-
 export function FeaturedProducts() {
-  return (
-    <section className="bg-white py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-            Featured Products
-          </h2>
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-          <div className="flex gap-4">
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Previous products"
-            >
-              <ChevronLeft className="h-6 w-6 text-gray-600" />
-            </button>
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              aria-label="Next products"
-            >
-              <ChevronRight className="h-6 w-6 text-gray-600" />
-            </button>
-          </div>
-        </div>
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products?limit=8");
+        const data = await response.json();
+        setProducts(data.items);
+      } catch (error) {
+        console.error("Error fetching featured products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
-            <Link key={product.id} href={product.href} className="group">
-              <div className="aspect-[4/5] w-full overflow-hidden rounded-lg bg-gray-50">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={500}
-                  height={625}
-                  className="h-full w-full object-cover object-center group-hover:scale-105 transition duration-300"
-                />
-              </div>
-              <div className="mt-4">
-                <h3 className="text-sm font-medium text-gray-900">
-                  {product.name}
-                </h3>
-                <p className="mt-1 text-sm font-medium text-gray-900">
-                  $
-                  {product.price.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
-              </div>
-            </Link>
+    fetchProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="aspect-square animate-pulse rounded-lg bg-gray-200"
+            />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <section className="container mx-auto px-4 py-16">
+      <div className="mb-8 text-center">
+        <h2 className="text-2xl font-bold sm:text-3xl">Featured Products</h2>
+        <p className="mt-2 text-gray-600">Discover our most popular items</p>
+      </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {products.map((product) => (
+          <ProductCard key={product.id} data={product} />
+        ))}
       </div>
     </section>
   );
