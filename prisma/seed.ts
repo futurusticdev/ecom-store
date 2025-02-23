@@ -3,47 +3,79 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean existing data
-  await prisma.product.deleteMany();
-  await prisma.category.deleteMany();
-
   // Create categories
   const categories = await Promise.all([
-    prisma.category.create({
-      data: {
-        name: "T-Shirts",
-        slug: "t-shirts",
+    prisma.category.upsert({
+      where: { id: "clothing" },
+      update: {},
+      create: {
+        id: "clothing",
+        name: "Clothing",
+        description: "Fashion clothing for all occasions",
       },
     }),
-    prisma.category.create({
-      data: {
-        name: "Hoodies",
-        slug: "hoodies",
+    prisma.category.upsert({
+      where: { id: "accessories" },
+      update: {},
+      create: {
+        id: "accessories",
+        name: "Accessories",
+        description: "Complete your look with our accessories",
       },
     }),
   ]);
 
   // Create products
-  await Promise.all(
-    categories.map((category) =>
-      prisma.product.create({
-        data: {
-          name: `${category.name} Example`,
-          description: `A great ${category.name.toLowerCase()} for any occasion.`,
-          price: 29.99,
-          images: [
-            `/images/${category.name.toLowerCase()}/1.jpg`,
-            `/images/${category.name.toLowerCase()}/2.jpg`,
-            `/images/${category.name.toLowerCase()}/3.jpg`,
-          ],
-          categoryId: category.id,
-          sizes: ["S", "M", "L", "XL"],
-          inStock: true,
-          slug: `${category.name.toLowerCase()}-example`,
-        },
-      })
-    )
-  );
+  await Promise.all([
+    prisma.product.upsert({
+      where: { slug: "classic-black-t-shirt" },
+      update: {},
+      create: {
+        name: "Classic Black T-Shirt",
+        description: "A timeless black t-shirt made from premium cotton",
+        price: 29.99,
+        images: [
+          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800",
+          "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800",
+        ],
+        categoryId: "clothing",
+        sizes: ["XS", "S", "M", "L", "XL"],
+        slug: "classic-black-t-shirt",
+      },
+    }),
+    prisma.product.upsert({
+      where: { slug: "leather-weekender-bag" },
+      update: {},
+      create: {
+        name: "Leather Weekender Bag",
+        description: "Premium leather bag perfect for short trips",
+        price: 199.99,
+        images: [
+          "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800",
+          "https://images.unsplash.com/photo-1547949003-9792a18a2601?w=800",
+        ],
+        categoryId: "accessories",
+        sizes: ["ONE SIZE"],
+        slug: "leather-weekender-bag",
+      },
+    }),
+    prisma.product.upsert({
+      where: { slug: "premium-wool-sweater" },
+      update: {},
+      create: {
+        name: "Premium Wool Sweater",
+        description: "Luxurious wool sweater for cold weather",
+        price: 149.99,
+        images: [
+          "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=800",
+          "https://images.unsplash.com/photo-1577900232427-20e8f532c175?w=800",
+        ],
+        categoryId: "clothing",
+        sizes: ["S", "M", "L", "XL"],
+        slug: "premium-wool-sweater",
+      },
+    }),
+  ]);
 }
 
 main()
