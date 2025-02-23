@@ -26,7 +26,7 @@ export default function ThankYouPage() {
           {/* Order Status */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
-              What's Next?
+              What&apos;s Next?
             </h2>
             <div className="space-y-4">
               <div className="flex items-start">
@@ -57,8 +57,8 @@ export default function ThankYouPage() {
                     Order Processing
                   </p>
                   <p className="text-sm text-gray-500">
-                    We'll start processing your order right away and notify you
-                    when it ships.
+                    We&apos;ll start processing your order right away and notify
+                    you when it ships.
                   </p>
                 </div>
               </div>
