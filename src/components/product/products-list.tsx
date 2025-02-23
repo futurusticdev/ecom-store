@@ -34,31 +34,54 @@ export function ProductsList({
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(12);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
     setProducts(initialProducts);
   }, [initialProducts]);
 
-  const handleCategoryChange = async (categoryId: string) => {
-    setLoading(true);
-    setSelectedCategory(categoryId);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const searchParams = new URLSearchParams();
+        if (selectedCategory) searchParams.set("category", selectedCategory);
+        if (page) searchParams.set("page", page.toString());
+        if (limit) searchParams.set("limit", limit.toString());
 
-    try {
-      const url = new URL("/api/products", window.location.origin);
-      if (categoryId) {
-        url.searchParams.append("categoryId", categoryId);
+        const response = await fetch(
+          `/api/products?${searchParams.toString()}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch products");
+        }
+        const data = await response.json();
+        setProducts(data.products);
+        setTotalPages(Math.ceil(data.total / limit));
+      } catch (err) {
+        console.error(
+          "Error fetching products:",
+          err instanceof Error ? err.message : "Unknown error"
+        );
+        setProducts([]);
+        setTotalPages(0);
+      } finally {
+        setLoading(false);
       }
-      url.searchParams.append("limit", "12");
+    };
 
-      const response = await fetch(url);
-      const data = await response.json();
-      setProducts(data.items);
-    } catch (error) {
-      // Set products to empty array on error
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
+    fetchProducts();
+  }, [selectedCategory, page, limit]);
+
+  const handleCategoryChange = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setPage(1); // Reset to first page when category changes
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
   return (
@@ -100,11 +123,32 @@ export function ProductsList({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} data={product} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} data={product} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center gap-2">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handlePageChange(i + 1)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md ${
+                      page === i + 1
+                        ? "bg-black text-white"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
