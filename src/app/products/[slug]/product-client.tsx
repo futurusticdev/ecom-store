@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
-import type { Product, ProductWithDetails } from "@/types";
+import type { Product } from "@/types";
 import { Heart, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import { ProductCard } from "@/components/ui/product-card";
 import { useCart } from "@/context/cart-context";
 
 interface ProductClientProps {
-  params: { slug: string };
+  product: Product;
+  relatedProducts: Product[];
 }
 
 const COLORS = [
@@ -37,11 +38,10 @@ if (typeof document !== "undefined") {
   document.head.appendChild(styleSheet);
 }
 
-export default function ProductClient({ params }: ProductClientProps) {
-  const { slug } = params;
-  const [product, setProduct] = useState<ProductWithDetails | null>(null);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+export function ProductClient({
+  product,
+  relatedProducts,
+}: ProductClientProps) {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[0].name);
   const [quantity, setQuantity] = useState(1);
@@ -57,59 +57,6 @@ export default function ProductClient({ params }: ProductClientProps) {
       setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
     }
   }, [product?.images?.length]);
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const response = await fetch(`/api/products/${slug}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch product");
-        }
-        const data = await response.json();
-        setProduct(data);
-        if (data.sizes.length > 0) {
-          setSelectedSize(data.sizes[0]);
-        }
-      } catch (err) {
-        console.error(
-          "Error fetching product:",
-          err instanceof Error ? err.message : "Unknown error"
-        );
-        setError("Failed to load product");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [slug]);
-
-  useEffect(() => {
-    const fetchRelatedProducts = async () => {
-      if (!product?.categoryId) return;
-
-      try {
-        const response = await fetch(
-          `/api/products?categoryId=${product.categoryId}&limit=4`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch related products");
-        }
-        const data = await response.json();
-        setRelatedProducts(
-          data.products.filter((p: Product) => p.id !== product.id)
-        );
-      } catch (err) {
-        console.error(
-          "Error fetching related products:",
-          err instanceof Error ? err.message : "Unknown error"
-        );
-        // Don't set error state for related products as it's not critical
-      }
-    };
-
-    fetchRelatedProducts();
-  }, [product?.categoryId, product?.id]);
 
   const nextImage = useCallback(() => {
     if (product?.images.length) {
@@ -157,6 +104,7 @@ export default function ProductClient({ params }: ProductClientProps) {
     [isLightboxOpen, nextImage, previousImage]
   );
 
+  // Add useEffect to handle keyboard events
   useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -189,22 +137,6 @@ export default function ProductClient({ params }: ProductClientProps) {
     setError("");
     setQuantity(1);
   };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[600px] items-center justify-center">
-        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="flex min-h-[600px] items-center justify-center">
-        <p className="text-lg text-gray-500">Product not found</p>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white relative">

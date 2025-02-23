@@ -1,37 +1,35 @@
-import prisma from "@/lib/db";
 import { ProductsList } from "@/components/product/products-list";
+import prisma from "@/lib/prisma";
+import { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
-
-async function getProducts() {
-  const products = await prisma.product.findMany({
-    take: 12,
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      category: true,
-    },
-  });
-
-  return products;
-}
-
-async function getCategories() {
-  const categories = await prisma.category.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
-
-  return categories;
-}
+export const metadata: Metadata = {
+  title: "Products - Your Store",
+  description: "Browse our collection of products",
+};
 
 export default async function ProductsPage() {
   const [products, categories] = await Promise.all([
-    getProducts(),
-    getCategories(),
+    prisma.product.findMany({
+      where: {
+        inStock: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+    prisma.category.findMany(),
   ]);
 
-  return <ProductsList initialProducts={products} categories={categories} />;
+  // Ensure we always pass an array, even if empty
+  const safeProducts = products || [];
+  const safeCategories = categories || [];
+
+  return (
+    <div className="min-h-screen bg-white">
+      <ProductsList
+        initialProducts={safeProducts}
+        categories={safeCategories}
+      />
+    </div>
+  );
 }

@@ -28,10 +28,10 @@ interface ProductsListProps {
 }
 
 export function ProductsList({
-  initialProducts,
-  categories,
+  initialProducts = [],
+  categories = [],
 }: ProductsListProps) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -58,8 +58,8 @@ export function ProductsList({
           throw new Error("Failed to fetch products");
         }
         const data = await response.json();
-        setProducts(data.products);
-        setTotalPages(Math.ceil(data.total / limit));
+        setProducts(data.products || []);
+        setTotalPages(Math.ceil((data.total || 0) / limit));
       } catch (err) {
         console.error(
           "Error fetching products:",
@@ -77,7 +77,7 @@ export function ProductsList({
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    setPage(1); // Reset to first page when category changes
+    setPage(1);
   };
 
   const handlePageChange = (newPage: number) => {

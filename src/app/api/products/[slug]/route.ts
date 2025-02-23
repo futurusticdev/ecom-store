@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/db";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
+interface RouteParams {
+  params: Promise<{ slug: string }>;
+}
+
+export async function GET(req: NextRequest, { params }: RouteParams) {
   try {
-    const { slug } = await params;
+    const resolvedParams = await params;
+    const { slug } = resolvedParams;
 
     if (!slug) {
       return NextResponse.json(

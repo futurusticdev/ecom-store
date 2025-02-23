@@ -1,48 +1,45 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/db";
+import prisma from "@/lib/prisma";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-
-    // Parse query parameters
-    const categoryId = searchParams.get("categoryId");
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "9");
+    const limit = parseInt(searchParams.get("limit") || "12");
+    const category = searchParams.get("category");
+
     const skip = (page - 1) * limit;
 
-    // Build filter conditions
     const where = {
-      ...(categoryId && { categoryId }),
+      inStock: true,
+      ...(category ? { categoryId: category } : {}),
     };
 
-    // Fetch products with related data
-    const products = await prisma.product.findMany({
-      where,
-      include: {
-        category: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    });
-
-    // Get total count for pagination
-    const total = await prisma.product.count({ where });
+    const [products, total] = await Promise.all([
+      prisma.product.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          category: true,
+        },
+      }),
+      prisma.product.count({ where }),
+    ]);
 
     return NextResponse.json({
-      items: products,
+      products,
       total,
-      currentPage: page,
+      page,
       totalPages: Math.ceil(total / limit),
-      hasMore: skip + products.length < total,
     });
   } catch (error) {
-    console.error("[PRODUCTS_GET]", error);
+    console.error("Error in products API:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Failed to fetch products" },
       { status: 500 }
     );
   }
