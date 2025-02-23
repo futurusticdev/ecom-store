@@ -17,7 +17,7 @@ export function Newsletter() {
       // await subscribeToNewsletter(email);
       setStatus("success");
       setEmail("");
-    } catch (error) {
+    } catch {
       setStatus("error");
     }
   };
