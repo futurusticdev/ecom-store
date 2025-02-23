@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Product, Category } from "@prisma/client";
 import {
@@ -22,7 +22,7 @@ type ProductWithDetails = Product & {
 };
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }
 
 const COLORS = [
@@ -33,7 +33,7 @@ const COLORS = [
 ];
 
 export default function ProductPage({ params }: PageProps) {
-  const { slug } = use(params);
+  const { slug } = params;
   const [product, setProduct] = useState<ProductWithDetails | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function ProductPage({ params }: PageProps) {
           setSelectedSize(data.sizes[0]);
         }
 
-        // Fetch related products from the same category
+        // Fetch related products
         const relatedResponse = await fetch(
           `/api/products?categoryId=${data.categoryId}&limit=4`
         );
@@ -119,80 +119,28 @@ export default function ProductPage({ params }: PageProps) {
 
   return (
     <div className="bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-x-8 gap-y-10 lg:grid-cols-2">
-          {/* Image gallery */}
+          {/* Product Images */}
           <div className="space-y-4">
-            {/* Main image */}
-            <div
-              className="relative aspect-[3/4] overflow-hidden rounded-lg bg-gray-100"
-              onMouseEnter={() => setIsZoomed(true)}
-              onMouseLeave={() => setIsZoomed(false)}
-              onMouseMove={handleMouseMove}
-            >
+            <div className="relative aspect-square overflow-hidden bg-gray-100">
               {product.images.length > 0 ? (
-                <>
-                  <div
-                    className={`absolute inset-0 transition-transform duration-200 ${
-                      isZoomed ? "scale-150" : "scale-100"
-                    }`}
-                    style={{
-                      transformOrigin: `${mousePosition.x}% ${mousePosition.y}%`,
-                    }}
-                  >
-                    <Image
-                      src={product.images[currentImageIndex]}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      priority
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      quality={90}
-                    />
-                  </div>
-
-                  {/* Image counter */}
-                  <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-full text-sm">
-                    {currentImageIndex + 1} / {product.images.length}
-                  </div>
-
-                  {/* Fullscreen button */}
-                  <button
-                    onClick={() => setIsFullscreen(true)}
-                    className="absolute top-4 right-4 bg-black/70 text-white p-2 rounded-full hover:bg-black/90"
-                  >
-                    <Expand className="h-4 w-4" />
-                  </button>
-
-                  {product.images.length > 1 && (
-                    <>
-                      <button
-                        onClick={previousImage}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 hover:bg-white"
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 hover:bg-white"
-                      >
-                        <ChevronRight className="h-6 w-6" />
-                      </button>
-                    </>
-                  )}
-                </>
-              ) : (
                 <Image
-                  src="/images/product-placeholder.png"
+                  src={product.images[currentImageIndex]}
                   alt={product.name}
                   fill
                   className="object-cover"
+                  priority
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
+              ) : (
+                <div className="flex h-full items-center justify-center bg-gray-100">
+                  <p className="text-gray-500">No image available</p>
+                </div>
               )}
             </div>
 
-            {/* Thumbnail gallery */}
+            {/* Thumbnail Gallery */}
             {product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-4">
                 {product.images.map((image, index) => (
@@ -218,56 +166,19 @@ export default function ProductPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Fullscreen modal */}
-          {isFullscreen && (
-            <div className="fixed inset-0 bg-black z-50 flex items-center justify-center">
-              <button
-                onClick={() => setIsFullscreen(false)}
-                className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full"
-              >
-                <X className="h-6 w-6" />
-              </button>
-              <div className="relative w-full h-full max-w-5xl max-h-[80vh] mx-4">
-                <Image
-                  src={product.images[currentImageIndex]}
-                  alt={product.name}
-                  fill
-                  className="object-contain"
-                  quality={100}
-                />
-                {product.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={previousImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 hover:bg-white/20"
-                    >
-                      <ChevronLeft className="h-8 w-8 text-white" />
-                    </button>
-                    <button
-                      onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 hover:bg-white/20"
-                    >
-                      <ChevronRight className="h-8 w-8 text-white" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Product info */}
+          {/* Product Info */}
           <div>
-            <div className="mb-8">
-              <h1 className="text-2xl font-medium text-gray-900 mb-2">
-                {product.name}
-              </h1>
-              <p className="text-xl text-gray-900">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              {product.name}
+            </h1>
+            <div className="mt-3">
+              <p className="text-3xl tracking-tight text-gray-900">
                 ${product.price.toFixed(2)}
               </p>
             </div>
 
             {/* Color selector */}
-            <div className="mb-8">
+            <div className="mt-8">
               <h2 className="text-sm text-gray-900 mb-2">
                 Color: {selectedColor.name}
               </h2>
@@ -288,24 +199,25 @@ export default function ProductPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* Size selector */}
+            {/* Size Selector */}
             {product.sizes.length > 0 && (
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-sm font-medium text-black">Size</h2>
-                  <button className="text-xs text-gray-600 underline">
-                    Size Guide
+              <div className="mt-8">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-900">Size</h3>
+                  <button className="text-sm font-medium text-gray-600 hover:text-gray-500">
+                    Size guide
                   </button>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {product.sizes.map((size: string) => (
+
+                <div className="grid grid-cols-4 gap-4 mt-4">
+                  {product.sizes.map((size) => (
                     <button
                       key={size}
                       onClick={() => setSelectedSize(size)}
-                      className={`flex items-center justify-center border py-2 text-sm text-black ${
+                      className={`flex items-center justify-center rounded-md border py-3 text-sm font-medium uppercase ${
                         selectedSize === size
-                          ? "border-black"
-                          : "border-gray-200"
+                          ? "border-black bg-black text-white"
+                          : "border-gray-200 text-gray-900 hover:bg-gray-50"
                       }`}
                     >
                       {size}
@@ -315,139 +227,63 @@ export default function ProductPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Add to cart section */}
-            <div className="flex items-center gap-2 mb-8">
-              <div className="flex border border-gray-200">
+            {/* Add to Cart */}
+            <div className="mt-8">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center border border-gray-200">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-50"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    min="1"
+                    value={quantity}
+                    onChange={(e) =>
+                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                    }
+                    className="w-16 border-x border-gray-200 py-2 text-center text-gray-900 [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+                  />
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-50"
+                  >
+                    +
+                  </button>
+                </div>
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="px-3 py-2 hover:bg-gray-50 text-black"
+                  type="button"
+                  className="flex-1 bg-black px-8 py-3 text-sm font-medium text-white hover:bg-black/90"
                 >
-                  -
+                  Add to Cart
                 </button>
-                <input
-                  type="text"
-                  value={quantity}
-                  onChange={(e) =>
-                    setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-                  }
-                  className="w-12 text-center border-x border-gray-200 focus:outline-none text-black"
-                />
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="px-3 py-2 hover:bg-gray-50 text-black"
+                  type="button"
+                  className="flex items-center justify-center rounded-md border border-gray-200 p-3 hover:bg-gray-50"
                 >
-                  +
+                  <Heart className="h-6 w-6 text-gray-600" />
+                  <span className="sr-only">Add to wishlist</span>
                 </button>
               </div>
-              <button
-                disabled={!product.inStock}
-                className="flex-1 bg-black text-white py-3 text-sm font-medium hover:bg-black/90 disabled:bg-gray-400"
-              >
-                Add to Cart
-              </button>
-              <button className="border border-gray-200 p-3 hover:bg-gray-50">
-                <Heart className="h-5 w-5" />
-              </button>
             </div>
 
-            {/* Accordion sections */}
-            <div>
-              <div>
-                <button
-                  onClick={() => toggleSection("details")}
-                  className="flex justify-between items-center w-full py-4 border-t border-gray-200"
-                >
-                  <span className="text-sm text-black font-medium">
-                    Product Details
-                  </span>
-                  <Plus
-                    className={`h-4 w-4 text-black transform transition-transform ${openSection === "details" ? "rotate-45" : ""}`}
-                  />
-                </button>
-                {openSection === "details" && (
-                  <div className="py-4 text-sm text-gray-600 space-y-2">
-                    <p>
-                      The perfect addition to your wardrobe, this versatile
-                      piece combines style and comfort.
-                    </p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Premium quality materials</li>
-                      <li>Carefully crafted design</li>
-                      <li>Durable construction</li>
-                      <li>Easy care instructions</li>
-                    </ul>
-                    <p>Material: 100% Premium Cotton</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <button
-                  onClick={() => toggleSection("size")}
-                  className="flex justify-between items-center w-full py-4 border-t border-gray-200"
-                >
-                  <span className="text-sm text-black font-medium">
-                    Size & Fit
-                  </span>
-                  <Plus
-                    className={`h-4 w-4 text-black transform transition-transform ${openSection === "size" ? "rotate-45" : ""}`}
-                  />
-                </button>
-                {openSection === "size" && (
-                  <div className="py-4 text-sm text-gray-600 space-y-2">
-                    <p>Regular fit, true to size.</p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Model is 6&apos;1&quot; and wears size M</li>
-                      <li>Fits true to size, take your normal size</li>
-                      <li>Cut for a comfortable regular fit</li>
-                      <li>Mid-weight fabric</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <button
-                  onClick={() => toggleSection("shipping")}
-                  className="flex justify-between items-center w-full py-4 border-t border-gray-200"
-                >
-                  <span className="text-sm text-black font-medium">
-                    Shipping & Returns
-                  </span>
-                  <Plus
-                    className={`h-4 w-4 text-black transform transition-transform ${openSection === "shipping" ? "rotate-45" : ""}`}
-                  />
-                </button>
-                {openSection === "shipping" && (
-                  <div className="py-4 text-sm text-gray-600 space-y-2">
-                    <h3 className="font-medium text-black mb-2">
-                      Free Shipping
-                    </h3>
-                    <p>2-4 business days for standard shipping</p>
-                    <p>1-2 business days for express shipping</p>
-
-                    <h3 className="font-medium text-black mt-4 mb-2">
-                      Returns
-                    </h3>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Free returns within 30 days</li>
-                      <li>Items must be unworn with original tags</li>
-                      <li>See our full return policy for details</li>
-                    </ul>
-                  </div>
-                )}
-              </div>
+            {/* Product Description */}
+            <div className="mt-8 prose prose-sm text-gray-500">
+              <p>{product.description}</p>
             </div>
           </div>
         </div>
 
-        {/* You May Also Like section */}
+        {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold tracking-tight text-gray-900 mb-6">
-              You May Also Like
+          <div className="mt-16 sm:mt-24">
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900">
+              You may also like
             </h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+
+            <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((relatedProduct) => (
                 <ProductCard key={relatedProduct.id} data={relatedProduct} />
               ))}
