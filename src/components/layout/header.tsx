@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clock, User2, Heart, ShoppingBag } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/context/cart-context";
 
 const navigation = [
   { name: "New Arrivals", href: "/new-arrivals" },
@@ -15,6 +16,7 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname();
+  const { itemCount } = useCart();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white">
@@ -78,9 +80,11 @@ export function Header() {
               aria-label="Shopping cart"
             >
               <ShoppingBag className="h-5 w-5 stroke-[1.75]" />
-              <span className="absolute -right-[5px] -top-[5px] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-black text-[10px] font-medium text-white">
-                3
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute -right-[5px] -top-[5px] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-black text-[10px] font-medium text-white">
+                  {itemCount}
+                </span>
+              )}
             </Link>
           </div>
         </div>

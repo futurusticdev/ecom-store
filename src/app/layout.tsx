@@ -1,40 +1,32 @@
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
+import { Inter } from "next/font/google";
+import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import "./globals.css";
-import { ClientProviders } from "@/components/providers/client-providers";
+import { CartProvider } from "@/context/cart-context";
 
-const fontSans = GeistSans;
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LUXE - Premium Fashion Store",
-  description: "Discover luxury fashion for men and women at LUXE",
-  icons: {
-    icon: [
-      {
-        url: "/favicon.ico",
-        sizes: "any",
-      },
-    ],
-  },
+  title: "Ecommerce Store",
+  description: "Modern ecommerce store built with Next.js",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" className={fontSans.className} suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground antialiased">
-        <ClientProviders>
-          <div className="relative flex min-h-screen flex-col">
+    <html lang="en">
+      <body className={inter.className}>
+        <CartProvider>
+          <div className="flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-        </ClientProviders>
+        </CartProvider>
       </body>
     </html>
   );

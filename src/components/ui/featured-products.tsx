@@ -26,9 +26,10 @@ export function FeaturedProducts() {
       try {
         const response = await fetch("/api/products?limit=8");
         const data = await response.json();
-        setProducts(data.items);
+        setProducts(data.products || []);
       } catch (error) {
         console.error("Error fetching featured products:", error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -49,6 +50,19 @@ export function FeaturedProducts() {
           ))}
         </div>
       </div>
+    );
+  }
+
+  if (!products.length) {
+    return (
+      <section className="container mx-auto px-4 py-16">
+        <div className="mb-8 text-center">
+          <h2 className="text-2xl font-bold sm:text-3xl">Featured Products</h2>
+          <p className="mt-2 text-gray-600">
+            No products available at the moment
+          </p>
+        </div>
+      </section>
     );
   }
 
