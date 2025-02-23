@@ -6,14 +6,6 @@ import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import { PaymentMethods } from "@/components/payment-methods";
 
-function LoadingState() {
-  return (
-    <div className="min-h-[600px] flex flex-col items-center justify-center">
-      <div className="animate-pulse">Loading cart...</div>
-    </div>
-  );
-}
-
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, total } = useCart();
 
