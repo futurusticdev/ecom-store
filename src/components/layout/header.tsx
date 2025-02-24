@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock, User2, Heart, ShoppingBag } from "lucide-react";
+import { Clock, Heart, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { UserMenu } from "@/components/auth/user-menu";
 
 export function Header() {
   const pathname = usePathname();
@@ -55,13 +56,7 @@ export function Header() {
               <Clock className="h-5 w-5 stroke-[1.75]" />
             </button>
 
-            <Link
-              href="/account"
-              className="text-gray-500 hover:text-black/90 transition-colors"
-              aria-label="Account"
-            >
-              <User2 className="h-5 w-5 stroke-[1.75]" />
-            </Link>
+            <UserMenu />
 
             <Link
               href="/wishlist"

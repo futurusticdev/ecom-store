@@ -3,13 +3,15 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
-import { ClientProviders } from "@/components/providers/client-providers";
+import { CartProvider } from "@/context/cart-context";
+import { AuthProvider } from "@/providers/auth-provider";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Ecommerce Store",
-  description: "Modern ecommerce store built with Next.js",
+  title: "LUXE - Fashion E-commerce",
+  description: "Discover the latest trends in luxury fashion",
 };
 
 export default function RootLayout({
@@ -20,13 +22,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ClientProviders>
-          <div className="flex min-h-screen flex-col">
+        <AuthProvider>
+          <CartProvider>
             <Header />
-            <main className="flex-1">{children}</main>
+            <main>{children}</main>
             <Footer />
-          </div>
-        </ClientProviders>
+            <Toaster />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );
