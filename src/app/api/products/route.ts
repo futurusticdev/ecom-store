@@ -8,6 +8,7 @@ export async function GET(request: Request) {
     const limit = Number(searchParams.get("limit")) || 12;
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category");
+    const tags = searchParams.get("tags")?.split(",") || [];
     const minPrice = Number(searchParams.get("minPrice")) || undefined;
     const maxPrice = Number(searchParams.get("maxPrice")) || undefined;
     const sort = searchParams.get("sort") || "createdAt.desc";
@@ -28,6 +29,17 @@ export async function GET(request: Request) {
     // Add category filter
     if (category) {
       where.categoryId = category;
+    }
+
+    // Add tags filter
+    if (tags.length > 0) {
+      where.tags = {
+        some: {
+          tagId: {
+            in: tags,
+          },
+        },
+      };
     }
 
     // Add price range filter
@@ -58,6 +70,11 @@ export async function GET(request: Request) {
       take: limit,
       include: {
         category: true,
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
       },
     });
 

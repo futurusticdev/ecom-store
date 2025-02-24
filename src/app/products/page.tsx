@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProductsPage() {
-  const [products, categories] = await Promise.all([
+  const [products, categories, tags] = await Promise.all([
     prisma.product.findMany({
       where: {
         inStock: true,
@@ -16,19 +16,29 @@ export default async function ProductsPage() {
       orderBy: {
         createdAt: "desc",
       },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
     }),
     prisma.category.findMany(),
+    prisma.tag.findMany(),
   ]);
 
-  // Ensure we always pass an array, even if empty
+  // Ensure we always pass arrays, even if empty
   const safeProducts = products || [];
   const safeCategories = categories || [];
+  const safeTags = tags || [];
 
   return (
     <div className="min-h-screen bg-white">
       <ProductsList
         initialProducts={safeProducts}
         categories={safeCategories}
+        tags={safeTags}
       />
     </div>
   );

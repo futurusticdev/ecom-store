@@ -17,6 +17,7 @@ interface Product {
   slug: string;
   createdAt: Date;
   updatedAt: Date;
+  tags: { tag: { id: string; name: string } }[];
 }
 
 interface Category {
@@ -24,9 +25,15 @@ interface Category {
   name: string;
 }
 
+interface Tag {
+  id: string;
+  name: string;
+}
+
 interface ProductsListProps {
   initialProducts: Product[];
   categories: Category[];
+  tags: Tag[];
 }
 
 const PRICE_RANGES = [
@@ -47,9 +54,11 @@ const SORT_OPTIONS = [
 export function ProductsList({
   initialProducts = [],
   categories = [],
+  tags = [],
 }: ProductsListProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriceRange, setSelectedPriceRange] = useState<{
     min?: number;
     max?: number;
@@ -74,6 +83,8 @@ export function ProductsList({
       try {
         const searchParams = new URLSearchParams();
         if (selectedCategory) searchParams.set("category", selectedCategory);
+        if (selectedTags.length > 0)
+          searchParams.set("tags", selectedTags.join(","));
         if (page) searchParams.set("page", page.toString());
         if (limit) searchParams.set("limit", limit.toString());
         if (debouncedSearch) searchParams.set("search", debouncedSearch);
@@ -107,6 +118,7 @@ export function ProductsList({
     fetchProducts();
   }, [
     selectedCategory,
+    selectedTags,
     selectedPriceRange,
     sortBy,
     debouncedSearch,
@@ -116,6 +128,15 @@ export function ProductsList({
 
   const handleCategoryChange = (categoryId: string) => {
     setSelectedCategory(categoryId);
+    setPage(1);
+  };
+
+  const handleTagToggle = (tagId: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tagId)
+        ? prev.filter((id) => id !== tagId)
+        : [...prev, tagId]
+    );
     setPage(1);
   };
 
@@ -140,6 +161,7 @@ export function ProductsList({
 
   const clearFilters = () => {
     setSelectedCategory("");
+    setSelectedTags([]);
     setSelectedPriceRange({});
     setSortBy("createdAt.desc");
     setSearchQuery("");
@@ -148,6 +170,7 @@ export function ProductsList({
 
   const hasActiveFilters =
     selectedCategory ||
+    selectedTags.length > 0 ||
     selectedPriceRange.min !== undefined ||
     selectedPriceRange.max !== undefined ||
     sortBy !== "createdAt.desc" ||
@@ -217,6 +240,29 @@ export function ProductsList({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tags
+                </label>
+                <div className="space-y-2 max-h-40 overflow-auto">
+                  {tags.map((tag) => (
+                    <label
+                      key={tag.id}
+                      className="flex items-center space-x-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedTags.includes(tag.id)}
+                        onChange={() => handleTagToggle(tag.id)}
+                        className="rounded border-gray-300 text-black focus:ring-black"
+                      />
+                      <span className="text-gray-700">{tag.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               {/* Price Range */}

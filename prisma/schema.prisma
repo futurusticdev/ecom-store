@@ -24,6 +24,7 @@ model Product {
   slug        String   @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  tags        ProductTag[]
 
   @@index([categoryId])
   @@index([slug])
@@ -38,4 +39,26 @@ model Category {
   updatedAt   DateTime  @updatedAt
 
   @@index([name])
+}
+
+model Tag {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  products    ProductTag[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([name])
+}
+
+model ProductTag {
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId       String
+  createdAt   DateTime  @default(now())
+
+  @@id([productId, tagId])
+  @@index([productId])
+  @@index([tagId])
 } 
