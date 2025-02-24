@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
+import { toast } from "@/components/ui/use-toast";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -33,14 +34,32 @@ export function SignUpForm() {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Registration failed");
+        throw new Error(data.error || "Registration failed");
       }
 
-      // Redirect to sign in page after successful registration
-      router.push("/auth/signin");
+      // Show success message
+      toast({
+        title: "Success!",
+        description: "Your account has been created. Please sign in.",
+      });
+
+      // Redirect to sign in page after a short delay
+      setTimeout(() => {
+        router.push("/auth/signin");
+      }, 2000);
     } catch (error) {
       console.error("Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
