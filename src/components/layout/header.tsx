@@ -3,16 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clock, User2, Heart, ShoppingBag } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCart } from "@/context/cart-context";
-
-const navigation = [
-  { name: "New Arrivals", href: "/new-arrivals" },
-  { name: "Women", href: "/women" },
-  { name: "Men", href: "/men" },
-  { name: "Accessories", href: "/accessories" },
-  { name: "Sale", href: "/sale" },
-];
 
 export function Header() {
   const pathname = usePathname();
