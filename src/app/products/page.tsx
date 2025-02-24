@@ -3,7 +3,6 @@ import prisma from "@/lib/prisma";
 import { Metadata } from "next";
 import { Prisma } from "@prisma/client";
 
-// Define the type for products with included relations
 type ProductWithRelations = Prisma.ProductGetPayload<{
   include: {
     category: true;
@@ -37,43 +36,43 @@ export default async function ProductsPage() {
           },
         },
       },
-    }),
+    }) as unknown as ProductWithRelations[],
     prisma.category.findMany(),
   ]);
 
-  // Ensure we always pass arrays, even if empty
-  const safeProducts = (products as ProductWithRelations[]).map((product) => {
+  // Transform products to match the expected format
+  const safeProducts = products.map((product: ProductWithRelations) => {
     const { tags, ...rest } = product;
     return {
       ...rest,
-      productTags: (tags as { tag: { id: string; name: string } }[]).map(
+      productTags: (tags as Array<{ tag: { id: string; name: string } }>).map(
         (tagRelation) => ({
           tag: tagRelation.tag,
         })
       ),
     };
   });
+
   const safeCategories = categories || [];
 
   // Get unique tags from products
   const uniqueTags = Array.from(
     new Set(
-      (products as ProductWithRelations[])
-        .flatMap((product) => product.tags || [])
+      products
+        .flatMap((product: ProductWithRelations) => product.tags)
         .map(
           (tagRelation: { tag: { id: string; name: string } }) =>
             tagRelation.tag
         )
     )
   );
-  const safeTags = uniqueTags || [];
 
   return (
     <div className="min-h-screen bg-white">
       <ProductsList
         initialProducts={safeProducts}
         categories={safeCategories}
-        tags={safeTags}
+        tags={uniqueTags}
       />
     </div>
   );
