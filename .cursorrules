@@ -1,62 +1,140 @@
-You are a Senior Front-End Developer and an Expert in ReactJS, NextJS, JavaScript, TypeScript, HTML, CSS and modern UI/UX frameworks (e.g., TailwindCSS, Shadcn, Radix). You are thoughtful, give nuanced answers, and are brilliant at reasoning. You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning.
+---
+name: nextjs-best-practices.mdc
+description: Best practices for Next.js applications and routing
+globs: **/*.{ts,tsx}
+---
 
-- Follow the user's requirements carefully & to the letter.
-- First think step-by-step - describe your plan for what to build in pseudocode, written out in great detail.
-- Confirm, then write code!
-- Always write correct, best practice, DRY principle (Don't Repeat Yourself), bug free, fully functional and working code.
+- Use the App Router for improved performance and simpler data fetching.
+- Implement server-side rendering for SEO benefits.
+- Utilize Next.js Image component for optimized image loading.
+- Use `getStaticProps` and `getServerSideProps` appropriately for data fetching.
 
-### Project Structure Guidelines
+---
 
-- Use `/src` directory structure
-- Keep components modular and reusable
-- Implement proper TypeScript types for all components and functions
-- Use proper naming conventions for files and components
+name: react-best-practices.mdc
+description: Best practices for React component development
+globs: \*_/_.{ts,tsx,js,jsx}
 
-### Code Implementation Guidelines
+---
 
-Follow these rules when writing code:
+- Use functional components with hooks instead of class components.
+- Implement proper state management using `useState` or external libraries like Zustand.
+- Utilize `useEffect` for side effects, ensuring cleanup functions are used when necessary.
+- Use `React.memo` for performance optimization of functional components.
 
-- Use early returns whenever possible to make the code more readable
-- Always use Tailwind classes for styling HTML elements; avoid using CSS or inline styles
-- Use "class:" instead of the ternary operator in class tags whenever possible
-- Use descriptive variable and function/const names
-- Event functions should be prefixed with "handle" (e.g., handleClick, handleSubmit)
-- Implement proper accessibility features (aria-labels, roles, keyboard navigation)
-- Use consts instead of functions where appropriate (e.g., const handleClick = () => {})
-- Define TypeScript types/interfaces for all props and data structures
+---
 
-### E-commerce Specific Guidelines
+name: typescript-best-practices.mdc
+description: TypeScript coding standards and type safety guidelines
+globs: \*_/_.{ts,tsx}
 
-- Implement proper error handling for API calls
-- Use proper loading states for async operations
-- Implement proper form validation using zod
-- Use proper state management with zustand
-- Implement proper cart functionality
-- Use proper payment integration with Stripe
-- Implement proper authentication
-- Use proper image optimization with Next.js Image component
+---
 
-### File Organization
+- Enable strict mode in your `tsconfig.json` for better type checking.
+- Use union types instead of enums for better flexibility.
+- Implement generics for reusable components and functions.
+- Use type assertions (`as`) sparingly and with caution.
 
-- Components should be in `/src/components`
-- Pages should be in `/src/app`
-- Hooks should be in `/src/hooks`
-- Utils should be in `/src/utils`
-- Types should be in `/src/types`
-- Store should be in `/src/store`
-- API routes should be in `/src/app/api`
+---
 
-### Testing Guidelines
+name: prisma-best-practices.mdc
+description: Best practices for using Prisma ORM
+globs: \*_/_.{ts,js}
 
-- Write unit tests for utilities and hooks
-- Write integration tests for complex components
-- Write e2e tests for critical user flows
-- Test accessibility with proper tools
+---
 
-### Performance Guidelines
+- Use Prisma Client in server-side code only, not in the browser.
+- Implement proper error handling for database operations.
+- Use Prisma's query raw methods for complex queries when necessary.
+- Regularly run `prisma generate` to keep your client up-to-date with schema changes.
 
-- Implement proper code splitting
-- Use proper caching strategies
-- Optimize images and assets
-- Implement proper SEO practices
-- Monitor and optimize Core Web Vitals
+---
+
+name: next-auth-best-practices.mdc
+description: Best practices for authentication with NextAuth.js
+globs: \*_/_.{ts,tsx}
+
+---
+
+- Use the Prisma adapter for seamless integration with your database.
+- Implement proper session management and security measures.
+- Use environment variables for sensitive information like secret keys.
+- Consider implementing custom providers for unique authentication needs.
+
+---
+
+name: react-hook-form-best-practices.mdc
+description: Best practices for form handling with React Hook Form
+globs: \*_/_.{ts,tsx}
+
+---
+
+- Use the `useForm` hook for form state management and validation.
+- Implement custom validation rules using the `validate` option.
+- Use the `Controller` component for controlled inputs with external UI libraries.
+- Utilize the `watch` function for real-time form value monitoring.
+
+---
+
+name: zustand-best-practices.mdc
+description: Best practices for state management with Zustand
+globs: \*_/_.{ts,tsx}
+
+---
+
+- Use the `create` function to create stores with minimal boilerplate.
+- Implement middleware like `devtools` for debugging purposes.
+- Use the `immer` middleware for easier state updates.
+- Consider using `persist` middleware for persisting state across sessions.
+
+---
+
+name: tailwindcss-best-practices.mdc
+description: Best practices for styling with Tailwind CSS
+globs: \*_/_.{ts,tsx,css}
+
+---
+
+- Use utility classes directly in your JSX for faster development.
+- Create custom components for reusable UI patterns.
+- Utilize the `@apply` directive in CSS for component-specific styles.
+- Use responsive utilities for mobile-first design.
+
+---
+
+name: shadcn-ui-best-practices.mdc
+description: Best practices for using Shadcn UI components
+globs: \*_/_.{ts,tsx}
+
+---
+
+- Follow the component structure and naming conventions provided by Shadcn UI.
+- Customize components using the provided props and slots.
+- Use the `cn` utility from `class-variance-authority` for conditional class names.
+- Ensure accessibility features are maintained when customizing components.
+
+---
+
+name: stripe-best-practices.mdc
+description: Best practices for integrating Stripe payments
+globs: \*_/_.{ts,js}
+
+---
+
+- Use the Stripe.js library for client-side payment processing.
+- Implement server-side validation and error handling for payment intents.
+- Use Stripe's webhooks for real-time payment status updates.
+- Ensure PCI compliance by never storing sensitive card information on your servers.
+
+---
+
+name: zod-best-practices.mdc
+description: Best practices for schema validation with Zod
+globs: \*_/_.{ts,tsx}
+
+---
+
+- Use Zod for both runtime and type-safe validation.
+- Implement custom validation rules using `.refine()` method.
+- Use `.parse()` for strict validation and `.safeParse()` for non-throwing validation.
+- Utilize Zod's integration with other libraries like React Hook Form for seamless form validation.
