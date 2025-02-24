@@ -44,6 +44,7 @@ export function SignInForm() {
         router.refresh();
       }
     } catch (error) {
+      console.error("Sign in error:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -128,7 +129,7 @@ export function SignInForm() {
       </div>
 
       <div className="text-center text-sm text-neutral-600">
-        Don't have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link
           href="/auth/sign-up"
           className="font-medium text-neutral-900 hover:underline"

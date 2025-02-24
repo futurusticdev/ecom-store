@@ -28,7 +28,9 @@ const Toast = React.forwardRef<
     variant?: "default" | "destructive";
   }
 >(({ className, variant = "default", ...props }, ref) => {
-  const { dismiss, update, ...restProps } = props as any;
+  const { ...restProps } = props as React.ComponentPropsWithoutRef<
+    typeof ToastPrimitives.Root
+  >;
 
   return (
     <ToastPrimitives.Root

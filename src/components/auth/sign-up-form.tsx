@@ -134,7 +134,7 @@ export function SignUpForm() {
               className="mt-1"
             />
             <Label htmlFor="terms" className="text-sm font-normal">
-              I agree to LUXE's{" "}
+              I agree to LUXE&apos;s{" "}
               <Link
                 href="/terms"
                 className="font-medium text-neutral-900 hover:underline"

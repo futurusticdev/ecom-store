@@ -23,21 +23,25 @@ export async function POST(req: Request) {
     // Hash password
     const hashedPassword = await hash(password, 12);
 
-    // Create user
+    // Create user with selected fields
     const user = await prisma.user.create({
       data: {
         name: `${firstName} ${lastName}`,
         email,
         password: hashedPassword,
       },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        image: true,
+      },
     });
-
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
 
     return NextResponse.json(
       {
-        user: userWithoutPassword,
+        user,
         message: "User created successfully",
       },
       { status: 201 }
