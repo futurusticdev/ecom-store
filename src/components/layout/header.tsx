@@ -10,6 +10,9 @@ export function Header() {
   const pathname = usePathname();
   const { itemCount, toggleCart } = useCart();
 
+  // Debug log to check item count
+  console.log("Header itemCount:", itemCount);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl">

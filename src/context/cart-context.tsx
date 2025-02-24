@@ -138,13 +138,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems([]);
   };
 
+  // Calculate total item count (sum of quantities)
+  const itemCount = items.reduce((count, item) => count + item.quantity, 0);
+
   const value = {
     items,
     addItem,
     removeItem,
     updateQuantity,
     clearCart,
-    itemCount: items.length,
+    itemCount,
     subtotal,
     total,
     isOpen,
