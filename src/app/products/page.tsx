@@ -17,6 +17,7 @@ export default async function ProductsPage() {
         createdAt: "desc",
       },
       include: {
+        category: true,
         tags: {
           include: {
             tag: true,

@@ -1,5 +1,18 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
+
+// Define type with relations
+type ProductWithTags = Prisma.ProductGetPayload<{
+  include: {
+    category: true;
+    tags: {
+      include: {
+        tag: true;
+      };
+    };
+  };
+}>;
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +27,7 @@ export async function GET(request: Request) {
     const sort = searchParams.get("sort") || "createdAt.desc";
 
     // Build where clause
-    const where: any = {
+    const where: Prisma.ProductWhereInput = {
       inStock: true,
     };
 
@@ -55,15 +68,15 @@ export async function GET(request: Request) {
 
     // Parse sort parameter
     const [sortField, sortOrder] = sort.split(".");
-    const orderBy = {
-      [sortField]: sortOrder,
+    const orderBy: Prisma.ProductOrderByWithRelationInput = {
+      [sortField]: sortOrder.toLowerCase() as Prisma.SortOrder,
     };
 
     // Get total count for pagination
     const total = await prisma.product.count({ where });
 
-    // Get products with pagination
-    const products = await prisma.product.findMany({
+    // Get products with proper typing
+    const products = (await prisma.product.findMany({
       where,
       orderBy,
       skip: (page - 1) * limit,
@@ -76,10 +89,16 @@ export async function GET(request: Request) {
           },
         },
       },
-    });
+    })) as ProductWithTags[];
+
+    // Transform response with proper typing
+    const transformedProducts = products.map((product) => ({
+      ...product,
+      tags: product.tags.map((pt) => pt.tag),
+    }));
 
     return NextResponse.json({
-      products,
+      products: transformedProducts,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -87,7 +106,13 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error fetching products:", error);
     return NextResponse.json(
-      { error: "Error fetching products" },
+      {
+        products: [],
+        total: 0,
+        page: 1,
+        totalPages: 0,
+        error: "Error fetching products",
+      },
       { status: 500 }
     );
   }

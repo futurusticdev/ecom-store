@@ -17,7 +17,12 @@ interface Product {
   slug: string;
   createdAt: Date;
   updatedAt: Date;
-  tags: { tag: { id: string; name: string } }[];
+  productTags: {
+    tag: {
+      id: string;
+      name: string;
+    };
+  }[];
 }
 
 interface Category {
