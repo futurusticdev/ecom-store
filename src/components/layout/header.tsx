@@ -16,39 +16,45 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname();
-  const { itemCount } = useCart();
+  const { itemCount, toggleCart } = useCart();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white">
-      <div className="mx-auto px-8 sm:px-12 lg:px-16">
-        <div className="flex h-[72px] items-center justify-between">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link
-              href="/"
-              className="text-[22px] font-black tracking-[-0.02em] text-black"
-            >
+    <header className="sticky top-0 z-40 w-full border-b bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex">
+            <Link href="/" className="text-xl font-bold">
               LUXE
             </Link>
           </div>
 
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-12">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  "text-[14.5px] font-semibold transition-colors hover:text-black/90",
-                  pathname === item.href ? "text-black/90" : "text-gray-500"
-                )}
-              >
-                {item.name}
-              </Link>
-            ))}
+          <nav className="hidden md:flex md:gap-x-8">
+            <Link
+              href="/"
+              className={`text-[15px] ${
+                pathname === "/" ? "text-black" : "text-gray-500"
+              } hover:text-black/90 transition-colors`}
+            >
+              Home
+            </Link>
+            <Link
+              href="/products"
+              className={`text-[15px] ${
+                pathname === "/products" ? "text-black" : "text-gray-500"
+              } hover:text-black/90 transition-colors`}
+            >
+              Products
+            </Link>
+            <Link
+              href="/categories"
+              className={`text-[15px] ${
+                pathname === "/categories" ? "text-black" : "text-gray-500"
+              } hover:text-black/90 transition-colors`}
+            >
+              Categories
+            </Link>
           </nav>
 
-          {/* Utility Icons */}
           <div className="flex items-center space-x-7">
             <button
               type="button"
@@ -74,8 +80,8 @@ export function Header() {
               <Heart className="h-5 w-5 stroke-[1.75]" />
             </Link>
 
-            <Link
-              href="/cart"
+            <button
+              onClick={toggleCart}
               className="relative text-gray-500 hover:text-black/90 transition-colors"
               aria-label="Shopping cart"
             >
@@ -85,7 +91,7 @@ export function Header() {
                   {itemCount}
                 </span>
               )}
-            </Link>
+            </button>
           </div>
         </div>
       </div>
