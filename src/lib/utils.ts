@@ -29,15 +29,15 @@ export function generateProductImages(
   );
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
+export function formatDate(date: Date | string) {
+  return new Date(date).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
-  }).format(date);
+    year: "numeric",
+  });
 }
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",

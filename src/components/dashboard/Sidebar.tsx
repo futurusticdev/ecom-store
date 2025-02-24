@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -10,6 +10,7 @@ import {
   Heart,
   Settings,
 } from "lucide-react";
+import { useEffect } from "react";
 
 const navigation = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -21,6 +22,14 @@ const navigation = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Prefetch all dashboard routes when the sidebar mounts
+  useEffect(() => {
+    navigation.forEach((item) => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-gray-50">
@@ -36,11 +45,12 @@ export function DashboardSidebar() {
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
+                  "group flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors duration-200",
                   isActive
                     ? "bg-gray-100 text-gray-900"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 )}
+                prefetch={true}
               >
                 <item.icon
                   className={cn(
