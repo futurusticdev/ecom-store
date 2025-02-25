@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clock, Heart, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useWishlist } from "@/context/wishlist-context";
 import { UserMenu } from "@/components/auth/user-menu";
 
 export function Header() {
   const pathname = usePathname();
   const { itemCount, toggleCart } = useCart();
+  const { itemCount: wishlistCount, toggleWishlist } = useWishlist();
 
   // Debug log to check item count
   console.log("Header itemCount:", itemCount);
@@ -61,13 +63,18 @@ export function Header() {
 
             <UserMenu />
 
-            <Link
-              href="/wishlist"
-              className="text-gray-500 hover:text-black/90 transition-colors"
+            <button
+              onClick={toggleWishlist}
+              className="relative text-gray-500 hover:text-black/90 transition-colors"
               aria-label="Wishlist"
             >
               <Heart className="h-5 w-5 stroke-[1.75]" />
-            </Link>
+              {wishlistCount > 0 && (
+                <span className="absolute -right-[5px] -top-[5px] flex h-[16px] w-[16px] items-center justify-center rounded-full bg-black text-[10px] font-medium text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
 
             <button
               onClick={toggleCart}

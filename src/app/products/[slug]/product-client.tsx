@@ -3,9 +3,18 @@
 import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import type { Product } from "@/types";
-import { Heart, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import {
+  Heart,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ZoomIn,
+  ShoppingCart,
+} from "lucide-react";
 import { ProductCard } from "@/components/ui/product-card";
 import { useCart } from "@/context/cart-context";
+import { useWishlist } from "@/context/wishlist-context";
+import { Button } from "@/components/ui/button";
 
 interface ProductClientProps {
   product: Product;
@@ -49,8 +58,19 @@ export function ProductClient({
   const [isZoomed, setIsZoomed] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const { addItem } = useCart();
+  const {
+    items: wishlistItems,
+    addItem: addToWishlist,
+    removeItem: removeFromWishlist,
+  } = useWishlist();
   const [error, setError] = useState("");
+
+  // Check if product is in wishlist
+  useEffect(() => {
+    setIsInWishlist(wishlistItems.some((item) => item.id === product.id));
+  }, [wishlistItems, product.id]);
 
   const handleImageError = useCallback(() => {
     if (product?.images?.length) {
@@ -136,6 +156,20 @@ export function ProductClient({
     addItem(cartItem);
     setError("");
     setQuantity(1);
+  };
+
+  const handleToggleWishlist = async () => {
+    if (isInWishlist) {
+      await removeFromWishlist(product.id);
+    } else {
+      await addToWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.images[0],
+        slug: product.slug,
+      });
+    }
   };
 
   return (
@@ -301,47 +335,69 @@ export function ProductClient({
               </div>
             )}
 
-            {/* Add to Cart */}
-            <div className="mt-8">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center border border-gray-200">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-50"
-                  >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    value={quantity}
-                    onChange={(e) =>
-                      setQuantity(Math.max(1, parseInt(e.target.value) || 1))
-                    }
-                    className="w-16 border-x border-gray-200 py-2 text-center text-gray-900 [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
-                  />
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-2 text-gray-600 hover:bg-gray-50"
-                  >
-                    +
-                  </button>
-                </div>
+            {/* Quantity selector */}
+            <div className="mt-4">
+              <label
+                htmlFor="quantity"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Quantity
+              </label>
+              <div className="mt-1 flex items-center border border-gray-200 w-fit">
                 <button
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-50"
                   type="button"
-                  onClick={handleAddToCart}
-                  className="flex-1 bg-black px-8 py-3 text-sm font-medium text-white hover:bg-black/90"
                 >
-                  Add to Cart
+                  -
                 </button>
+                <input
+                  type="number"
+                  id="quantity"
+                  min="1"
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(Math.max(1, parseInt(e.target.value) || 1))
+                  }
+                  className="w-16 border-x border-gray-200 py-2 text-center text-gray-900 [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+                />
                 <button
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-50"
                   type="button"
-                  className="flex items-center justify-center rounded-md border border-gray-200 p-3 hover:bg-gray-50"
                 >
-                  <Heart className="h-6 w-6 text-gray-600" />
-                  <span className="sr-only">Add to wishlist</span>
+                  +
                 </button>
               </div>
+            </div>
+
+            {/* Add to Cart */}
+            <div className="mt-8 flex space-x-4">
+              <Button
+                onClick={handleAddToCart}
+                disabled={!product.inStock}
+                className="flex-1 flex items-center justify-center"
+              >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                {product.inStock ? "Add to Cart" : "Out of Stock"}
+              </Button>
+
+              <Button
+                onClick={handleToggleWishlist}
+                variant="outline"
+                className={`flex items-center justify-center ${
+                  isInWishlist
+                    ? "text-red-600 border-red-300 hover:bg-red-50"
+                    : ""
+                }`}
+              >
+                <Heart
+                  className={`h-5 w-5 ${isInWishlist ? "fill-red-600" : ""}`}
+                />
+                <span className="ml-2 sr-only md:not-sr-only md:inline-block">
+                  {isInWishlist ? "In Wishlist" : "Add to Wishlist"}
+                </span>
+              </Button>
             </div>
 
             {/* Product Description */}
