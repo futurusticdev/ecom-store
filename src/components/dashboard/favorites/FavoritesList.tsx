@@ -1,10 +1,27 @@
-import Image from "next/image";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import prisma from "@/lib/prisma";
+import dynamic from "next/dynamic";
+
+// Use dynamic import for client component
+const FavoriteItem = dynamic(() => import("./FavoriteItem"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-lg border bg-card overflow-hidden shadow-sm flex flex-col h-[280px]">
+      <div className="h-48 w-full bg-gray-200 animate-pulse"></div>
+      <div className="p-4 flex-1 flex flex-col gap-2">
+        <div className="h-5 bg-gray-200 animate-pulse rounded w-3/4"></div>
+        <div className="h-10 bg-gray-200 animate-pulse rounded w-full mt-1"></div>
+        <div className="flex justify-between mt-4">
+          <div className="h-5 bg-gray-200 animate-pulse rounded w-1/4"></div>
+          <div className="h-8 bg-gray-200 animate-pulse rounded w-1/3"></div>
+        </div>
+      </div>
+    </div>
+  ),
+});
 
 interface FavoritesListProps {
   userId: string;
@@ -98,44 +115,7 @@ export async function FavoritesList({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {favorites.map((product) => (
-          <div
-            key={product.id}
-            className="rounded-lg border bg-card overflow-hidden shadow-sm flex flex-col"
-          >
-            <div className="relative h-48 w-full">
-              <Image
-                src={product.images[0] || "/placeholder.png"}
-                alt={product.name}
-                fill
-                className="object-cover"
-                loading="lazy"
-              />
-              <button
-                className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md"
-                aria-label="Remove from favorites"
-              >
-                <Heart className="h-5 w-5 text-red-500 fill-red-500" />
-              </button>
-            </div>
-            <div className="p-4 flex-1 flex flex-col">
-              <h3 className="font-medium text-sm sm:text-base line-clamp-1">
-                {product.name}
-              </h3>
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-1 flex-1">
-                {product.description}
-              </p>
-              <div className="flex justify-between items-center mt-4">
-                <span className="font-bold text-sm sm:text-base">
-                  {formatCurrency(product.price)}
-                </span>
-                <Link href={`/products/${product.id}`}>
-                  <Button size="sm" variant="outline">
-                    View Details
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
+          <FavoriteItem key={product.id} product={product} />
         ))}
       </div>
 
