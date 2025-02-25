@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Product {
   id: string;
@@ -27,6 +28,7 @@ function FavoriteItem({ product }: { product: Product }) {
   const { removeItem } = useWishlist();
   const { addItem } = useCart();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleRemoveFromWishlist = async () => {
     try {
@@ -38,8 +40,12 @@ function FavoriteItem({ product }: { product: Product }) {
         description: `${product.name} has been removed from your favorites.`,
       });
 
-      // Refresh the page to update the UI after removal
-      window.location.reload();
+      // Force a revalidation using router.refresh() instead of a full page reload
+      router.refresh();
+
+      // Navigate to the same page with a timestamp to ensure cache is bypassed
+      const timestamp = Date.now();
+      router.push(`/dashboard/favorites?t=${timestamp}`);
     } catch (error) {
       toast({
         title: "Error",

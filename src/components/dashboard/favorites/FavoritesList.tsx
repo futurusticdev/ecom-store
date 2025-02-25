@@ -8,11 +8,12 @@ interface FavoritesListProps {
   userId: string;
   page?: number;
   limit?: number;
+  timestamp?: number; // Add timestamp parameter for cache busting
 }
 
-// Cache the favorites query
+// Cache the favorites query with a shorter cache duration
 const getCachedFavorites = unstable_cache(
-  async ({ userId, page = 1, limit = 12 }: FavoritesListProps) => {
+  async ({ userId, page = 1, limit = 12, timestamp }: FavoritesListProps) => {
     const skip = (page - 1) * limit;
 
     try {
@@ -60,19 +61,21 @@ const getCachedFavorites = unstable_cache(
     }
   },
   ["favorites-list"],
-  { revalidate: 60 } // Cache for 60 seconds
+  { revalidate: 10 } // Cache for 10 seconds instead of 60 to ensure fresher data
 );
 
 export async function FavoritesList({
   userId,
   page = 1,
   limit = 12,
+  timestamp = Date.now(), // Default timestamp to current time
 }: FavoritesListProps) {
-  // Use the cached function
+  // Use the cached function with timestamp to ensure cache is properly invalidated
   const { favorites, total, totalPages } = await getCachedFavorites({
     userId,
     page,
     limit,
+    timestamp,
   });
 
   if (!favorites.length) {

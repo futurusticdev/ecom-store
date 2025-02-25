@@ -62,6 +62,15 @@ export default async function FavoritesPage({
     }
   }
 
+  // Extract timestamp parameter for cache busting
+  let timestamp: number | undefined;
+  if (resolvedParams && typeof resolvedParams.t === "string") {
+    const parsedTimestamp = parseInt(resolvedParams.t);
+    if (!isNaN(parsedTimestamp)) {
+      timestamp = parsedTimestamp;
+    }
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 md:p-8 text-center sm:text-left">
       <div>
@@ -74,7 +83,11 @@ export default async function FavoritesPage({
       </div>
 
       <Suspense fallback={<FavoritesListSkeleton />}>
-        <FavoritesList userId={userId} page={pageNumber} />
+        <FavoritesList
+          userId={userId}
+          page={pageNumber}
+          timestamp={timestamp}
+        />
       </Suspense>
     </div>
   );
