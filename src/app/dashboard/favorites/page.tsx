@@ -1,94 +1,103 @@
 import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import prisma from "@/lib/prisma";
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { authOptions } from "@/lib/auth";
 import { unstable_cache } from "next/cache";
-import { FavoritesList } from "@/components/dashboard/favorites/FavoritesList";
+import prisma from "@/lib/prisma";
+import FavoritesList from "@/components/dashboard/favorites/FavoritesList";
+import { redirect } from "next/navigation";
 
-// Cache the user lookup to avoid repeated database calls
-const getUserId = unstable_cache(
-  async (email: string) => {
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-    return user?.id;
+// Cache the favorites query with a shorter cache duration
+const getCachedFavorites = unstable_cache(
+  async ({
+    userId,
+    page = 1,
+    limit = 12,
+  }: {
+    userId: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const skip = (page - 1) * limit;
+
+    try {
+      // Get user with favorites using the correct relation name
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          favorites: {
+            skip,
+            take: limit,
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              images: true,
+              description: true,
+              slug: true,
+              inStock: true,
+              sizes: true,
+              categoryId: true,
+              createdAt: true,
+              updatedAt: true,
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              favorites: true,
+            },
+          },
+        },
+      });
+
+      return {
+        favorites: user?.favorites || [],
+        total: user?._count?.favorites || 0,
+        totalPages: Math.ceil((user?._count?.favorites || 0) / limit),
+      };
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      return {
+        favorites: [],
+        total: 0,
+        totalPages: 0,
+      };
+    }
   },
-  ["user-id"],
-  { revalidate: 3600 } // Cache for 1 hour
+  ["favorites-list"],
+  { revalidate: 10 } // Cache for 10 seconds instead of 60 to ensure fresher data
 );
 
-function FavoritesListSkeleton() {
-  return (
-    <div className="space-y-4 text-center sm:text-left">
-      <Skeleton className="h-8 w-1/3 mx-auto sm:mx-0" />
-      <Skeleton className="h-4 w-1/4 mx-auto sm:mx-0" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Skeleton key={i} className="h-64 rounded-md" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default async function FavoritesPage({
-  searchParams,
-}: {
+export default async function FavoritesPage(props: {
+  params: Promise<Record<string, string>>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const session = await getServerSession();
+  const searchParams = await props.searchParams;
+  const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
-    redirect("/auth/signin");
+  if (!session?.user) {
+    redirect("/auth/signin?callbackUrl=/dashboard/favorites");
   }
 
-  const userId = await getUserId(session.user.email);
+  const page =
+    typeof searchParams.page === "string" ? parseInt(searchParams.page, 10) : 1;
 
-  if (!userId) {
-    redirect("/auth/signin");
-  }
-
-  // Await the searchParams promise
-  const resolvedParams = await searchParams;
-
-  // Convert to number safely
-  let pageNumber = 1;
-  if (resolvedParams && typeof resolvedParams.page === "string") {
-    const parsed = parseInt(resolvedParams.page);
-    if (!isNaN(parsed)) {
-      pageNumber = parsed;
-    }
-  }
-
-  // Extract timestamp parameter for cache busting
-  let timestamp: number | undefined;
-  if (resolvedParams && typeof resolvedParams.t === "string") {
-    const parsedTimestamp = parseInt(resolvedParams.t);
-    if (!isNaN(parsedTimestamp)) {
-      timestamp = parsedTimestamp;
-    }
-  }
+  // Pre-fetch server data
+  const data = await getCachedFavorites({
+    userId: session.user.id,
+    page,
+    limit: 12,
+  });
 
   return (
-    <div className="space-y-6 sm:space-y-8 p-4 sm:p-6 md:p-8 text-center sm:text-left">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-          Your Favorites
-        </h1>
-        <p className="text-sm sm:text-base text-muted-foreground">
-          View and manage your saved items
-        </p>
-      </div>
+    <div className="container max-w-6xl py-8 px-4 md:px-6">
+      <h1 className="text-3xl font-bold mb-8">Your Favorites</h1>
 
-      <Suspense fallback={<FavoritesListSkeleton />}>
-        <FavoritesList
-          userId={userId}
-          page={pageNumber}
-          timestamp={timestamp}
-        />
-      </Suspense>
+      <FavoritesList initialData={data} />
     </div>
   );
 }

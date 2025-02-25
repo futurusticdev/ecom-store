@@ -26,6 +26,15 @@ const WishlistContext = createContext<WishlistContextType | undefined>(
   undefined
 );
 
+// Create a type for the API response
+interface WishlistApiItem {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  slug: string;
+}
+
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +57,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         const data = await response.json();
 
         // Transform the data to match our WishlistItem interface
-        const transformedItems = data.wishlist.map((item: any) => ({
+        const transformedItems = data.wishlist.map((item: WishlistApiItem) => ({
           id: item.id,
           name: item.name,
           price: item.price,

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Heart, ShoppingCart, Trash2 } from "lucide-react";
+import { ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useCart } from "@/context/cart-context";
@@ -30,8 +30,8 @@ export function WishlistItem({ product }: WishlistItemProps) {
   const { addItem } = useCart();
 
   const handleRemoveFromWishlist = async () => {
+    setIsRemoving(true);
     try {
-      setIsRemoving(true);
       const response = await fetch("/api/wishlist", {
         method: "POST",
         headers: {
@@ -54,7 +54,7 @@ export function WishlistItem({ product }: WishlistItemProps) {
 
       // Refresh the page to update the wishlist
       window.location.reload();
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to remove from wishlist. Please try again.",

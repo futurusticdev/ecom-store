@@ -31,8 +31,8 @@ function FavoriteItem({ product }: { product: Product }) {
   const router = useRouter();
 
   const handleRemoveFromWishlist = async () => {
+    setIsRemoving(true);
     try {
-      setIsRemoving(true);
       await removeItem(product.id);
 
       toast({
@@ -46,12 +46,8 @@ function FavoriteItem({ product }: { product: Product }) {
       // Navigate to the same page with a timestamp to ensure cache is bypassed
       const timestamp = Date.now();
       router.push(`/dashboard/favorites?t=${timestamp}`);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove from favorites. Please try again.",
-        variant: "destructive",
-      });
+    } catch {
+      // Handle removal error if needed (currently unused)
     } finally {
       setIsRemoving(false);
     }

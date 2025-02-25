@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import type { Product } from "@/types";
 
 // Use dynamic import for client component
 const FavoriteItem = dynamic(() => import("./FavoriteItem"), {
@@ -20,7 +21,12 @@ const FavoriteItem = dynamic(() => import("./FavoriteItem"), {
   ),
 });
 
-export function FavoritesGrid({ products }: { products: any[] }) {
+interface FavoritesGridProps {
+  products: Product[];
+  onRemove: (id: string) => void;
+}
+
+export function FavoritesGrid({ products }: FavoritesGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
       {products.map((product) => (

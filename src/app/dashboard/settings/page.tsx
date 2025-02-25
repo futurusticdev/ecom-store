@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { ProfileForm } from "@/components/dashboard/settings/ProfileForm";
 import { PasswordForm } from "@/components/dashboard/settings/PasswordForm";
 import { NotificationSettings } from "@/components/dashboard/settings/NotificationSettings";
+import { DeleteAccountForm } from "@/components/dashboard/settings/DeleteAccountForm";
 
 export default async function SettingsPage() {
   const session = await getServerSession();
@@ -50,6 +51,8 @@ export default async function SettingsPage() {
           <h2 className="text-lg font-semibold">Notification Preferences</h2>
           <NotificationSettings userId={user.id} />
         </div>
+
+        <DeleteAccountForm userId={user.id} />
       </div>
     </div>
   );

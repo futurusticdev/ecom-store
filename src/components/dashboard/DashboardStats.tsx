@@ -20,33 +20,52 @@ const getCachedUserStats = unstable_cache(
 export async function DashboardStats({ userId }: DashboardStatsProps) {
   const stats = await getCachedUserStats(userId);
 
+  // Helper function to determine change type
+  const getChangeType = (percentChange: number) => {
+    if (percentChange > 0) return "positive";
+    if (percentChange < 0) return "negative";
+    return "neutral";
+  };
+
+  // Format percentage with + or - sign
+  const formatPercentage = (percentChange: number) => {
+    const prefix = percentChange > 0 ? "+" : "";
+    return `${prefix}${percentChange}%`;
+  };
+
+  const orderPercentChange = parseFloat(stats.orderPercentChange || "0");
+  const spendingPercentChange = parseFloat(stats.spendingPercentChange || "0");
+  const favoritesPercentChange = parseFloat(
+    stats.favoritesPercentChange || "0"
+  );
+
   const statCards: StatCard[] = [
     {
       name: "Total Orders",
       value: stats.totalOrders.toString(),
       icon: ShoppingBag,
-      change: "+4.75%",
-      changeType: "positive",
+      change: formatPercentage(orderPercentChange),
+      changeType: getChangeType(orderPercentChange),
     },
     {
       name: "Saved Items",
       value: stats.savedItems.toString(),
       icon: Heart,
-      change: "+10.18%",
-      changeType: "positive",
+      change: formatPercentage(favoritesPercentChange),
+      changeType: getChangeType(favoritesPercentChange),
     },
     {
       name: "Total Spent",
       value: formatCurrency(stats.totalSpent),
       icon: CreditCard,
-      change: "+12.5%",
-      changeType: "positive",
+      change: formatPercentage(spendingPercentChange),
+      changeType: getChangeType(spendingPercentChange),
     },
     {
       name: "Active Orders",
       value: stats.activeOrders.toString(),
       icon: Package,
-      change: "0",
+      change: "Current",
       changeType: "neutral",
     },
   ];

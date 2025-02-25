@@ -27,6 +27,7 @@ model Product {
   tags        ProductTag[]
   OrderItem   OrderItem[]
   favoritedBy User[]    @relation("UserFavorites")
+  reviews     Review[]
 
   @@index([categoryId])
   @@index([slug])
@@ -105,6 +106,7 @@ model User {
   addresses             Address[]
   favorites             Product[]               @relation("UserFavorites")
   notificationSettings  NotificationPreference[]
+  reviews               Review[]
 
   @@index([email])
 }
@@ -177,4 +179,22 @@ model NotificationPreference {
 
   @@unique([userId, key])
   @@index([userId])
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating      Int      @db.SmallInt
+  title       String?
+  comment     String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@index([rating])
 } 

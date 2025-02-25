@@ -15,6 +15,7 @@ import { ProductCard } from "@/components/ui/product-card";
 import { useCart } from "@/context/cart-context";
 import { useWishlist } from "@/context/wishlist-context";
 import { Button } from "@/components/ui/button";
+import { ReviewsList } from "@/components/product/reviews-list";
 
 interface ProductClientProps {
   product: Product;
@@ -405,6 +406,11 @@ export function ProductClient({
               <p>{product.description}</p>
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-16 sm:mt-24 border-t pt-16">
+          <ReviewsList productId={product.id} />
         </div>
 
         {/* Related Products */}

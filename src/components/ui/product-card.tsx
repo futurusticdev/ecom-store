@@ -3,8 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Product } from "@/types";
-import { generateProductImages } from "@/lib/utils";
+import { generateProductImages, formatCurrency } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { Rating } from "@/components/ui/rating";
 
 interface ProductCardProps {
   data: Product;
@@ -14,6 +15,8 @@ export function ProductCard({ data }: ProductCardProps) {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
 
   useEffect(() => {
     if (data.images && data.images.length > 0) {
@@ -23,6 +26,24 @@ export function ProductCard({ data }: ProductCardProps) {
       setImageUrl(generatedImages[0]);
     }
   }, [data.id, data.images]);
+
+  // Fetch the average rating for this product
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const response = await fetch(`/api/reviews?productId=${data.id}`);
+        if (response.ok) {
+          const { averageRating, totalReviews } = await response.json();
+          setAverageRating(averageRating);
+          setReviewCount(totalReviews);
+        }
+      } catch (error) {
+        console.error("Error fetching product ratings:", error);
+      }
+    };
+
+    fetchRatings();
+  }, [data.id]);
 
   const handleImageError = () => {
     setImageError(true);
@@ -70,9 +91,19 @@ export function ProductCard({ data }: ProductCardProps) {
       </div>
       <div className="p-4">
         <h3 className="text-lg font-semibold text-gray-900">{data.name}</h3>
-        <p className="mt-1 text-sm text-gray-500">{data.description}</p>
+        {reviewCount > 0 && (
+          <div className="flex items-center gap-2 mt-1">
+            <Rating value={averageRating} readOnly size="sm" />
+            <span className="text-xs text-muted-foreground">
+              ({reviewCount})
+            </span>
+          </div>
+        )}
+        <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+          {data.description}
+        </p>
         <p className="mt-2 text-lg font-medium text-gray-900">
-          ${data.price.toFixed(2)}
+          {formatCurrency(data.price)}
         </p>
       </div>
     </Link>

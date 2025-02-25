@@ -19,36 +19,112 @@ if (process.env.NODE_ENV !== "production") {
 export default prisma;
 
 export async function getUserStats(userId: string) {
-  const [orderCount, activeOrders, totalSpent, favoriteCount] =
-    await Promise.all([
-      prisma.order.count({
-        where: { userId },
-      }),
-      prisma.order.count({
-        where: {
-          userId,
-          status: { in: ["PROCESSING", "SHIPPED"] },
+  // Get current date and date 30 days ago for comparison
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(today.getDate() - 60);
+
+  const [
+    currentOrderCount,
+    previousOrderCount,
+    activeOrders,
+    currentTotalSpent,
+    previousTotalSpent,
+    currentFavoriteCount,
+    previousFavoriteCount,
+  ] = await Promise.all([
+    // Current period orders (last 30 days)
+    prisma.order.count({
+      where: {
+        userId,
+        createdAt: { gte: thirtyDaysAgo },
+      },
+    }),
+    // Previous period orders (30-60 days ago)
+    prisma.order.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: sixtyDaysAgo,
+          lt: thirtyDaysAgo,
         },
-      }),
-      prisma.order.aggregate({
-        where: { userId },
-        _sum: { total: true },
-      }),
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          _count: {
-            select: { favorites: true },
-          },
+      },
+    }),
+    // Active orders
+    prisma.order.count({
+      where: {
+        userId,
+        status: { in: ["PROCESSING", "SHIPPED"] },
+      },
+    }),
+    // Current period spending (last 30 days)
+    prisma.order.aggregate({
+      where: {
+        userId,
+        createdAt: { gte: thirtyDaysAgo },
+      },
+      _sum: { total: true },
+    }),
+    // Previous period spending (30-60 days ago)
+    prisma.order.aggregate({
+      where: {
+        userId,
+        createdAt: {
+          gte: sixtyDaysAgo,
+          lt: thirtyDaysAgo,
         },
-      }),
-    ]);
+      },
+      _sum: { total: true },
+    }),
+    // Current favorites count
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        _count: {
+          select: { favorites: true },
+        },
+      },
+    }),
+    // We don't have historical data for favorites, so we'll use a mock value
+    // In a real app, you would track this over time
+    Promise.resolve({ _count: { favorites: 0 } }),
+  ]);
+
+  // Calculate total orders (all time)
+  const totalOrders = await prisma.order.count({
+    where: { userId },
+  });
+
+  // Calculate percentage changes
+  const calculatePercentChange = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  const orderPercentChange = calculatePercentChange(
+    currentOrderCount,
+    previousOrderCount
+  );
+  const spendingPercentChange = calculatePercentChange(
+    currentTotalSpent._sum.total || 0,
+    previousTotalSpent._sum.total || 0
+  );
+  const favoritesPercentChange = calculatePercentChange(
+    currentFavoriteCount?._count.favorites || 0,
+    previousFavoriteCount?._count.favorites || 0
+  );
 
   return {
-    totalOrders: orderCount,
+    totalOrders,
     activeOrders,
-    totalSpent: totalSpent._sum.total ?? 0,
-    savedItems: favoriteCount?._count.favorites ?? 0,
+    totalSpent: currentTotalSpent._sum.total ?? 0,
+    savedItems: currentFavoriteCount?._count.favorites ?? 0,
+    orderPercentChange: orderPercentChange.toFixed(2),
+    spendingPercentChange: spendingPercentChange.toFixed(2),
+    favoritesPercentChange: favoritesPercentChange.toFixed(2),
   };
 }
 
