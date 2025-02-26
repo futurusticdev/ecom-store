@@ -19,12 +19,13 @@ import {
   Settings,
 } from "lucide-react";
 import { getRecentActivity, Activity } from "@/services/dashboard-service";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistance, parseISO } from "date-fns";
 
 export function RecentActivity() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -39,6 +40,16 @@ export function RecentActivity() {
 
         // Ensure data is an array before setting state
         if (Array.isArray(data)) {
+          // Log the timestamps for debugging
+          console.log(
+            "Activity timestamps:",
+            data.map((a) => ({
+              message: a.message,
+              timestamp: a.timestamp,
+              formattedTime: formatTimeAgo(a.timestamp),
+            }))
+          );
+
           setActivities(data);
         } else {
           console.error("Expected array of activities but got:", data);
@@ -60,10 +71,19 @@ export function RecentActivity() {
     fetchActivities();
 
     // Set up polling for fresh data every 30 seconds
-    const intervalId = setInterval(fetchActivities, 30000);
+    const dataIntervalId = setInterval(fetchActivities, 30000);
 
-    // Clean up interval on component unmount
-    return () => clearInterval(intervalId);
+    // Set up a timer to update the current time every 15 seconds
+    // This ensures that the "time ago" display updates more frequently
+    const timeIntervalId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 15000); // Update every 15 seconds instead of 60 seconds
+
+    // Clean up intervals on component unmount
+    return () => {
+      clearInterval(dataIntervalId);
+      clearInterval(timeIntervalId);
+    };
   }, []);
 
   const getActivityIcon = (type: string) => {
@@ -83,11 +103,42 @@ export function RecentActivity() {
     }
   };
 
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (date: Date | string) => {
     try {
-      return formatDistanceToNow(new Date(date), { addSuffix: true });
+      // Handle different date formats
+      let dateObj: Date;
+
+      if (typeof date === "string") {
+        // If it's an ISO string, parse it
+        dateObj = parseISO(date);
+      } else if (date instanceof Date) {
+        // If it's already a Date object, use it directly
+        dateObj = date;
+      } else {
+        // If it's neither, create a new Date object
+        console.warn("Invalid date format:", date);
+        dateObj = new Date();
+      }
+
+      // Check if the date is valid
+      if (isNaN(dateObj.getTime())) {
+        console.warn("Invalid date:", date);
+        return "recently";
+      }
+
+      // Use currentTime in a way that doesn't affect the result but makes
+      // React aware that this function depends on currentTime
+      const timeDiff = currentTime.getTime() - dateObj.getTime();
+      if (timeDiff < 0) {
+        console.warn("Future date detected:", date);
+      }
+
+      // Format the date using currentTime as the reference time
+      return formatDistance(dateObj, currentTime, {
+        addSuffix: true,
+      });
     } catch (error) {
-      console.error("Error formatting date:", error);
+      console.error("Error formatting date:", error, date);
       return "recently";
     }
   };

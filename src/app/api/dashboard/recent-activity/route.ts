@@ -6,6 +6,9 @@ interface RecentUser {
   id: string;
   name: string | null;
   emailVerified: Date | null;
+  accounts?: {
+    createdAt: Date;
+  }[];
 }
 
 interface RecentOrder {
@@ -60,12 +63,18 @@ export async function GET(request: Request) {
       recentUsers = await prisma.user.findMany({
         take: limit,
         orderBy: {
-          emailVerified: "desc",
+          id: "desc",
         },
         select: {
           id: true,
           name: true,
           emailVerified: true,
+          accounts: {
+            select: {
+              createdAt: true,
+            },
+            take: 1,
+          },
         },
       });
     } catch (userError) {
@@ -123,13 +132,23 @@ export async function GET(request: Request) {
 
     // Combine and sort all activities
     const activities: Activity[] = [
-      ...recentUsers.map((user) => ({
-        id: `user-${user.id}`,
-        type: "NEW_USER",
-        message: `New customer ${user.name || "Anonymous"} registered`,
-        timestamp: user.emailVerified || new Date(),
-        data: { userId: user.id },
-      })),
+      ...recentUsers.map((user) => {
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+        const timestamp =
+          user.accounts && user.accounts.length > 0
+            ? user.accounts[0].createdAt
+            : user.emailVerified || twoDaysAgo;
+
+        return {
+          id: `user-${user.id}`,
+          type: "NEW_USER",
+          message: `New customer ${user.name || "Anonymous"} registered`,
+          timestamp,
+          data: { userId: user.id },
+        };
+      }),
       ...recentOrders.map((order) => ({
         id: `order-${order.id}`,
         type: "ORDER_STATUS",
