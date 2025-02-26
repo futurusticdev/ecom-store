@@ -41,8 +41,17 @@ export function SalesChart() {
         setError(null);
 
         const result = await getSalesData(timeframe);
-        setSalesData(result.salesData);
-        setSummary(result.summary);
+
+        // Validate the data structure
+        if (result && Array.isArray(result.salesData) && result.summary) {
+          setSalesData(result.salesData);
+          setSummary(result.summary);
+        } else {
+          console.error("Expected sales data object but got:", result);
+          setSalesData([]);
+          setSummary(null);
+          setError("Received invalid data format from server");
+        }
       } catch (err) {
         console.error("Error fetching sales data:", err);
         setError("Failed to load sales data. Please try again later.");
@@ -70,8 +79,13 @@ export function SalesChart() {
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return format(date, "MMM dd");
+    try {
+      const date = new Date(dateString);
+      return format(date, "MMM dd");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateString;
+    }
   };
 
   // Custom tooltip component
@@ -124,7 +138,7 @@ export function SalesChart() {
               <p>{error}</p>
             </div>
           </div>
-        ) : (
+        ) : Array.isArray(salesData) && salesData.length > 0 ? (
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
@@ -166,6 +180,12 @@ export function SalesChart() {
                 </defs>
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="w-full h-[300px] flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              No sales data available for this period
+            </div>
           </div>
         )}
       </CardContent>

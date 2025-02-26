@@ -36,7 +36,15 @@ export function RecentOrders() {
         setLoading(true);
         setError(null);
         const data = await getRecentOrders(5);
-        setOrders(data);
+
+        // Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setOrders(data);
+        } else {
+          console.error("Expected array of orders but got:", data);
+          setOrders([]);
+          setError("Received invalid data format from server");
+        }
       } catch (err) {
         console.error("Error fetching recent orders:", err);
         setError("Failed to load recent orders. Please try again later.");
@@ -99,38 +107,38 @@ export function RecentOrders() {
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between py-2 border-b last:border-0"
-              >
-                <div>
-                  <p className="font-medium">
-                    {order.items[0]?.productName || "Unknown Product"}
-                  </p>
+            {Array.isArray(orders) && orders.length > 0 ? (
+              orders.map((order) => (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between py-2 border-b last:border-0"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {order.items[0]?.productName || "Unknown Product"}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">
+                        {order.customer.name}
+                      </p>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(order.date), "MMM dd, yyyy")}
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm text-muted-foreground">
-                      {order.customer.name}
+                    <p className="text-sm font-medium">
+                      {formatCurrency(order.total)}
                     </p>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(order.date), "MMM dd, yyyy")}
-                    </p>
+                    <Badge className={getStatusColor(order.status)}>
+                      {order.status.charAt(0) +
+                        order.status.slice(1).toLowerCase()}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">
-                    {formatCurrency(order.total)}
-                  </p>
-                  <Badge className={getStatusColor(order.status)}>
-                    {order.status.charAt(0) +
-                      order.status.slice(1).toLowerCase()}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-
-            {orders.length === 0 && (
+              ))
+            ) : (
               <div className="text-center py-4 text-muted-foreground">
                 No recent orders found
               </div>

@@ -37,7 +37,15 @@ export function RecentActivity() {
         setLoading(true);
         setError(null);
         const data = await getRecentActivity(5);
-        setActivities(data);
+
+        // Ensure data is an array before setting state
+        if (Array.isArray(data)) {
+          setActivities(data);
+        } else {
+          console.error("Expected array of activities but got:", data);
+          setActivities([]);
+          setError("Received invalid data format from server");
+        }
       } catch (err) {
         console.error("Error fetching recent activities:", err);
         setError("Failed to load recent activities. Please try again later.");
@@ -67,7 +75,12 @@ export function RecentActivity() {
   };
 
   const formatTimeAgo = (date: Date) => {
-    return formatDistanceToNow(new Date(date), { addSuffix: true });
+    try {
+      return formatDistanceToNow(new Date(date), { addSuffix: true });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "recently";
+    }
   };
 
   return (
@@ -96,24 +109,24 @@ export function RecentActivity() {
           </div>
         ) : (
           <div className="space-y-4">
-            {activities.map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-start gap-3 py-2 border-b last:border-0"
-              >
-                <div className="rounded-full bg-muted p-2">
-                  {getActivityIcon(activity.type)}
+            {Array.isArray(activities) && activities.length > 0 ? (
+              activities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-start gap-3 py-2 border-b last:border-0"
+                >
+                  <div className="rounded-full bg-muted p-2">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div>
+                    <p className="font-medium">{activity.message}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatTimeAgo(activity.timestamp)}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">{activity.message}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatTimeAgo(activity.timestamp)}
-                  </p>
-                </div>
-              </div>
-            ))}
-
-            {activities.length === 0 && (
+              ))
+            ) : (
               <div className="text-center py-4 text-muted-foreground">
                 No recent activities found
               </div>

@@ -236,66 +236,122 @@ function generateMockSalesData(period: string = "7d"): {
 
 // Public API functions
 export async function getDashboardStats(): Promise<DashboardStats> {
-  return await fetchWithFallback<DashboardStats>(
-    API_ENDPOINTS.STATS,
-    async () => {
-      const response = await fetch(API_ENDPOINTS.STATS);
-      if (!response.ok) throw new Error("Failed to fetch dashboard stats");
-      const data = await response.json();
+  try {
+    const response = await fetch(API_ENDPOINTS.STATS);
+    if (!response.ok) throw new Error("Failed to fetch dashboard stats");
+
+    const data = await response.json();
+
+    // Ensure we're returning the expected structure
+    if (data && data.stats) {
       return data.stats;
-    },
-    generateMockDashboardStats
-  );
+    } else {
+      console.error(
+        "API returned unexpected format for dashboard stats:",
+        data
+      );
+      // If data is not in expected format, return mock data
+      return generateMockDashboardStats();
+    }
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+    // Fall back to mock data on error
+    return generateMockDashboardStats();
+  }
 }
 
 export async function getRecentOrders(limit: number = 5): Promise<Order[]> {
-  return await fetchWithFallback<Order[]>(
-    `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`,
-    async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch recent orders");
-      const data = await response.json();
+  try {
+    const response = await fetch(
+      `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch recent orders");
+
+    const data = await response.json();
+
+    // Ensure we're returning an array
+    if (data && Array.isArray(data.orders)) {
       return data.orders;
-    },
-    () => generateMockRecentOrders(limit)
-  );
+    } else if (data && typeof data === "object" && !Array.isArray(data)) {
+      console.error("API returned unexpected format:", data);
+      // If data is not in expected format, return mock data
+      return generateMockRecentOrders(limit);
+    } else {
+      return [];
+    }
+  } catch (error) {
+    console.error("Error fetching recent orders:", error);
+    // Fall back to mock data on error
+    return generateMockRecentOrders(limit);
+  }
 }
 
 export async function getRecentActivity(
   limit: number = 5
 ): Promise<Activity[]> {
-  return await fetchWithFallback<Activity[]>(
-    `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`,
-    async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch recent activity");
-      const data = await response.json();
+  try {
+    const response = await fetch(
+      `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch recent activity");
+
+    const data = await response.json();
+
+    // Ensure we're returning an array
+    if (data && Array.isArray(data.activities)) {
       return data.activities;
-    },
-    () => generateMockRecentActivity(limit)
-  );
+    } else {
+      console.error("API returned unexpected format for activities:", data);
+      // If data is not in expected format, return mock data
+      return generateMockRecentActivity(limit);
+    }
+  } catch (error) {
+    console.error("Error fetching recent activity:", error);
+    // Fall back to mock data on error
+    return generateMockRecentActivity(limit);
+  }
 }
 
 export async function getSalesData(
   period: string = "7d"
 ): Promise<{ salesData: SalesDataPoint[]; summary: SalesSummary }> {
-  return await fetchWithCache<{
-    salesData: SalesDataPoint[];
-    summary: SalesSummary;
-  }>(
-    `${API_ENDPOINTS.SALES_DATA}?period=${period}`,
-    `sales_data_${period}`,
-    async () => {
-      const response = await fetch(
-        `${API_ENDPOINTS.SALES_DATA}?period=${period}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch sales data");
-      return await response.json();
-    },
-    () => generateMockSalesData(period)
-  );
+  try {
+    const response = await fetch(
+      `${API_ENDPOINTS.SALES_DATA}?period=${period}`
+    );
+    if (!response.ok) throw new Error("Failed to fetch sales data");
+
+    const data = await response.json();
+
+    // Validate the data structure
+    if (data && Array.isArray(data.salesData) && data.summary) {
+      return data;
+    } else {
+      console.error("API returned unexpected format for sales data:", data);
+      // If data is not in expected format, return mock data
+      return generateMockSalesData(period);
+    }
+  } catch (error) {
+    console.error("Error fetching sales data:", error);
+
+    // Try to get from cache if available
+    const cachedData =
+      typeof window !== "undefined"
+        ? localStorage.getItem(`sales_data_${period}`)
+        : null;
+
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.value && parsed.value.salesData) {
+          return parsed.value;
+        }
+      } catch (e) {
+        console.error("Error parsing cached sales data:", e);
+      }
+    }
+
+    // Fall back to mock data
+    return generateMockSalesData(period);
+  }
 }
