@@ -36,6 +36,10 @@ export function RecentActivity() {
       try {
         setLoading(true);
         setError(null);
+
+        // Add a small delay to prevent too many rapid requests
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         const data = await getRecentActivity(5);
 
         // Ensure data is an array before setting state
@@ -48,13 +52,23 @@ export function RecentActivity() {
         }
       } catch (err) {
         console.error("Error fetching recent activities:", err);
-        setError("Failed to load recent activities. Please try again later.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Failed to load recent activities. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchActivities();
+
+    // Set up polling for fresh data every 30 seconds
+    const intervalId = setInterval(fetchActivities, 30000);
+
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
   }, []);
 
   const getActivityIcon = (type: string) => {

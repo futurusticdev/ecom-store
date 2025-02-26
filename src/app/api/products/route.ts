@@ -104,7 +104,7 @@ export async function GET(request: Request) {
       totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Error fetching products:", { error });
     return NextResponse.json(
       {
         products: [],

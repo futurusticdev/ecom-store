@@ -290,11 +290,33 @@ export async function getRecentActivity(
   limit: number = 5
 ): Promise<Activity[]> {
   try {
-    const response = await fetch(
-      `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`
-    );
-    if (!response.ok) throw new Error("Failed to fetch recent activity");
+    // Add timeout to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
+    const response = await fetch(
+      `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`,
+      {
+        signal: controller.signal,
+        headers: {
+          "Cache-Control": "no-cache",
+          Pragma: "no-cache",
+        },
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    // Handle HTTP errors
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      console.error(`API error (${response.status}): ${errorText}`);
+      throw new Error(
+        `Failed to fetch recent activity: ${response.status} ${response.statusText}`
+      );
+    }
+
+    // Parse the response
     const data = await response.json();
 
     // Ensure we're returning an array
@@ -306,7 +328,30 @@ export async function getRecentActivity(
       return generateMockRecentActivity(limit);
     }
   } catch (error) {
-    console.error("Error fetching recent activity:", error);
+    // Handle different types of errors
+    if (error instanceof DOMException && error.name === "AbortError") {
+      console.error("Request timed out fetching recent activity");
+    } else {
+      console.error("Error fetching recent activity:", error);
+    }
+
+    // Try to get from cache if available
+    const cachedData =
+      typeof window !== "undefined"
+        ? localStorage.getItem(`recent_activity_${limit}`)
+        : null;
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.value && Array.isArray(parsed.value)) {
+          console.log("Using cached recent activity data");
+          return parsed.value;
+        }
+      } catch (e) {
+        console.error("Error parsing cached activity data:", e);
+      }
+    }
+
     // Fall back to mock data on error
     return generateMockRecentActivity(limit);
   }

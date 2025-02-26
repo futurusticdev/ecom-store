@@ -144,7 +144,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
+    console.error("Error fetching dashboard stats:", { error });
     return NextResponse.json(
       { error: "Error fetching dashboard statistics" },
       { status: 500 }

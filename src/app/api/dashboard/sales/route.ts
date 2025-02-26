@@ -94,7 +94,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Error fetching sales data:", error);
+    console.error("Error fetching sales data:", { error });
     return NextResponse.json(
       { error: "Error fetching sales data" },
       { status: 500 }
