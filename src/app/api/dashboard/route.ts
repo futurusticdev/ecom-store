@@ -1,16 +1,39 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { checkDatabaseConnection } from "@/lib/db-check";
 
 export async function GET() {
   try {
-    // Get total sales
-    const orders = await prisma.order.findMany({
-      where: {
-        NOT: {
-          status: "CANCELLED",
+    // First check database connection
+    const isConnected = await checkDatabaseConnection();
+    if (!isConnected) {
+      console.log("Database connection failed");
+      return NextResponse.json(
+        {
+          error: "Database connection failed",
+          stats: null,
         },
-      },
-    });
+        { status: 500 }
+      );
+    }
+
+    // Get total sales
+    let orders = [];
+    try {
+      orders = await prisma.order.findMany({
+        where: {
+          NOT: {
+            status: "CANCELLED",
+          },
+        },
+      });
+    } catch (orderError) {
+      console.log("Error fetching orders:", orderError);
+      return NextResponse.json(
+        { error: "Error fetching orders data" },
+        { status: 500 }
+      );
+    }
 
     const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
 
@@ -21,23 +44,44 @@ export async function GET() {
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-    const newCustomers = await prisma.user.count({
-      where: {
-        createdAt: {
-          gte: oneMonthAgo,
+    let newCustomers = 0;
+    try {
+      newCustomers = await prisma.user.count({
+        where: {
+          createdAt: {
+            gte: oneMonthAgo,
+          },
         },
-      },
-    });
+      });
+    } catch (customerError) {
+      console.log("Error fetching new customers:", customerError);
+      return NextResponse.json(
+        { error: "Error fetching customer data" },
+        { status: 500 }
+      );
+    }
 
     // Calculate conversion rate (orders / unique users who placed orders)
-    const uniqueCustomers = await prisma.order.groupBy({
-      by: ["userId"],
-      _count: {
-        id: true,
-      },
-    });
+    let uniqueCustomers = [];
+    let totalUsers = 0;
 
-    const totalUsers = await prisma.user.count();
+    try {
+      uniqueCustomers = await prisma.order.groupBy({
+        by: ["userId"],
+        _count: {
+          id: true,
+        },
+      });
+
+      totalUsers = await prisma.user.count();
+    } catch (conversionError) {
+      console.log("Error calculating conversion rate:", conversionError);
+      return NextResponse.json(
+        { error: "Error calculating conversion metrics" },
+        { status: 500 }
+      );
+    }
+
     const conversionRate =
       totalUsers > 0 ? (uniqueCustomers.length / totalUsers) * 100 : 0;
 
@@ -45,54 +89,67 @@ export async function GET() {
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-    const previousMonthOrders = await prisma.order.findMany({
-      where: {
-        createdAt: {
-          gte: twoMonthsAgo,
-          lt: oneMonthAgo,
+    let previousMonthOrders = [];
+    let previousMonthNewCustomers = 0;
+    let previousMonthUniqueCustomers = [];
+    let previousMonthTotalUsers = 0;
+
+    try {
+      previousMonthOrders = await prisma.order.findMany({
+        where: {
+          createdAt: {
+            gte: twoMonthsAgo,
+            lt: oneMonthAgo,
+          },
+          NOT: {
+            status: "CANCELLED",
+          },
         },
-        NOT: {
-          status: "CANCELLED",
+      });
+
+      previousMonthNewCustomers = await prisma.user.count({
+        where: {
+          createdAt: {
+            gte: twoMonthsAgo,
+            lt: oneMonthAgo,
+          },
         },
-      },
-    });
+      });
+
+      // Calculate previous month's conversion rate
+      previousMonthUniqueCustomers = await prisma.order.groupBy({
+        by: ["userId"],
+        where: {
+          createdAt: {
+            gte: twoMonthsAgo,
+            lt: oneMonthAgo,
+          },
+        },
+        _count: {
+          id: true,
+        },
+      });
+
+      previousMonthTotalUsers = await prisma.user.count({
+        where: {
+          createdAt: {
+            lt: oneMonthAgo,
+          },
+        },
+      });
+    } catch (previousMonthError) {
+      console.log("Error fetching previous month data:", previousMonthError);
+      return NextResponse.json(
+        { error: "Error fetching comparison data" },
+        { status: 500 }
+      );
+    }
 
     const previousMonthSales = previousMonthOrders.reduce(
       (sum, order) => sum + order.total,
       0
     );
     const previousMonthOrderCount = previousMonthOrders.length;
-
-    const previousMonthNewCustomers = await prisma.user.count({
-      where: {
-        createdAt: {
-          gte: twoMonthsAgo,
-          lt: oneMonthAgo,
-        },
-      },
-    });
-
-    // Calculate previous month's conversion rate
-    const previousMonthUniqueCustomers = await prisma.order.groupBy({
-      by: ["userId"],
-      where: {
-        createdAt: {
-          gte: twoMonthsAgo,
-          lt: oneMonthAgo,
-        },
-      },
-      _count: {
-        id: true,
-      },
-    });
-
-    const previousMonthTotalUsers = await prisma.user.count({
-      where: {
-        createdAt: {
-          lt: oneMonthAgo,
-        },
-      },
-    });
 
     const previousMonthConversionRate =
       previousMonthTotalUsers > 0
@@ -144,10 +201,21 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching dashboard stats:", { error });
+    // Fix for Next.js 15 error handling issue
+    if (error instanceof Error) {
+      console.log("Error stack:", error.stack);
+    } else {
+      console.log("Unknown error:", error);
+    }
+
     return NextResponse.json(
       { error: "Error fetching dashboard statistics" },
       { status: 500 }
     );
+  } finally {
+    // Always disconnect from the database to prevent connection pool issues
+    await prisma.$disconnect().catch((err) => {
+      console.log("Error disconnecting from database:", err);
+    });
   }
 }
