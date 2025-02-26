@@ -55,7 +55,6 @@ function FavoriteItem({ product }: { product: Product }) {
 
   const handleAddToCart = () => {
     addItem({
-      id: product.id,
       productId: product.id,
       name: product.name,
       price: product.price,

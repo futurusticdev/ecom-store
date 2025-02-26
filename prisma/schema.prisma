@@ -120,14 +120,19 @@ model VerificationToken {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
-  status    OrderStatus @default(PROCESSING)
-  total     Float
-  items     OrderItem[]
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  status      OrderStatus @default(PROCESSING)
+  total       Float
+  items       OrderItem[]
+  discountId  String?
+  discount    Discount?   @relation("OrderDiscount", fields: [discountId], references: [id])
+  discountAmount Float?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  @@index([discountId])
 }
 
 model OrderItem {
@@ -197,4 +202,30 @@ model Review {
   @@index([userId])
   @@index([productId])
   @@index([rating])
+}
+
+model Discount {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  type            DiscountType
+  value           Float
+  minPurchase     Float            @default(0)
+  maxUses         Int              @default(100)
+  usedCount       Int              @default(0)
+  expiryDate      DateTime?
+  isActive        Boolean          @default(true)
+  productCategory String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  orders          Order[]          @relation("OrderDiscount")
+
+  @@index([code])
+  @@index([isActive])
+  @@index([expiryDate])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+  SHIPPING
 } 

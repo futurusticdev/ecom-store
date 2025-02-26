@@ -3,9 +3,18 @@
 import { X } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { CartItem } from "./cart-item";
+import { CartDiscount } from "./cart-discount";
 
 export function CartSidebar() {
-  const { items, subtotal, isOpen, toggleCart } = useCart();
+  const {
+    items,
+    subtotal,
+    total,
+    isOpen,
+    toggleCart,
+    discount,
+    discountAmount,
+  } = useCart();
 
   // Debug logs
   console.log("Cart Items:", items);
@@ -82,10 +91,28 @@ export function CartSidebar() {
             {/* Footer */}
             {items.length > 0 && (
               <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
-                <div className="flex justify-between text-base font-medium text-gray-900">
-                  <p>Subtotal</p>
-                  <p>${subtotal.toFixed(2)}</p>
+                {/* Discount Component */}
+                <CartDiscount />
+
+                <div className="mt-6 space-y-2">
+                  <div className="flex justify-between text-base font-medium text-gray-500">
+                    <p>Subtotal</p>
+                    <p>${subtotal.toFixed(2)}</p>
+                  </div>
+
+                  {discount && (
+                    <div className="flex justify-between text-base font-medium text-green-600">
+                      <p>Discount</p>
+                      <p>-${discountAmount.toFixed(2)}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-base font-medium text-gray-900">
+                    <p>Total</p>
+                    <p>${total.toFixed(2)}</p>
+                  </div>
                 </div>
+
                 <p className="mt-0.5 text-sm text-gray-500">
                   Shipping and taxes calculated at checkout.
                 </p>

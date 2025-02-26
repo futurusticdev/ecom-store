@@ -1,0 +1,72 @@
+/* Remove scrollbars and ensure content is fully visible */
+.admin-section {
+  height: auto;
+  min-height: 100vh;
+}
+
+/* Remove all overflow restrictions */
+.admin-section,
+.admin-section * {
+  overflow: visible !important;
+}
+
+/* Reset any overflow settings */
+main,
+pre,
+.overflow-auto,
+.overflow-y-auto,
+.overflow-x-auto {
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+/* Ensure cards display full content */
+.card {
+  height: auto !important;
+  max-height: none !important;
+}
+
+/* Ensure pre elements show all content */
+pre {
+  white-space: pre-wrap;
+  height: auto !important;
+}
+
+/* Hide scrollbars for the admin section */
+.admin-section::-webkit-scrollbar,
+.admin-section *::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-section,
+.admin-section * {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Apply to specific elements */
+pre,
+.overflow-auto,
+.overflow-y-auto,
+.overflow-x-auto {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+pre::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ensure content is still scrollable but scrollbar is hidden */
+main {
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+main::-webkit-scrollbar {
+  display: none;
+}

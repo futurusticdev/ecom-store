@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 export interface CartItem {
   id: string;
@@ -11,11 +11,19 @@ export interface CartItem {
   image: string;
   size?: string;
   color?: string;
+  category?: string;
+}
+
+export interface Discount {
+  id: string;
+  code: string;
+  type: "PERCENTAGE" | "FIXED" | "SHIPPING";
+  value: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
+  addItem: (newItem: Omit<CartItem, "id">) => void;
   removeItem: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
@@ -24,80 +32,106 @@ interface CartContextType {
   total: number;
   isOpen: boolean;
   toggleCart: () => void;
+  discount: Discount | null;
+  applyDiscount: (discount: Discount) => void;
+  removeDiscount: () => void;
+  discountAmount: number;
+  isLoaded: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const calculateTotals = (items: CartItem[]) => {
-  if (!items || !Array.isArray(items)) return { subtotal: 0, total: 0 };
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [discount, setDiscount] = useState<Discount | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  // Load cart from localStorage on initial render
+  useEffect(() => {
+    const loadCartData = () => {
+      const savedCart = localStorage.getItem("cart");
+      const savedDiscount = localStorage.getItem("cartDiscount");
+
+      if (savedCart) {
+        try {
+          setItems(JSON.parse(savedCart));
+        } catch (e) {
+          console.error("Failed to parse cart from localStorage", e);
+        }
+      }
+
+      if (savedDiscount) {
+        try {
+          setDiscount(JSON.parse(savedDiscount));
+        } catch (e) {
+          console.error("Failed to parse discount from localStorage", e);
+        }
+      }
+
+      // Mark as loaded after data is retrieved
+      setIsLoaded(true);
+    };
+
+    // Load cart data immediately
+    loadCartData();
+  }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(items));
+  }, [items]);
+
+  // Save discount to localStorage whenever it changes
+  useEffect(() => {
+    if (discount) {
+      localStorage.setItem("cartDiscount", JSON.stringify(discount));
+    } else {
+      localStorage.removeItem("cartDiscount");
+    }
+  }, [discount]);
+
+  const toggleCart = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // Calculate subtotal
   const subtotal = items.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
 
-  // Calculate total with tax (10%)
-  const total = subtotal + subtotal * 0.1;
+  // Calculate discount amount
+  const discountAmount = discount
+    ? discount.type === "PERCENTAGE"
+      ? (subtotal * discount.value) / 100
+      : discount.type === "FIXED"
+      ? discount.value
+      : 0 // For shipping discounts, we'll handle this in the checkout page
+    : 0;
 
-  return { subtotal, total };
-};
+  // Calculate total (subtotal - discount)
+  const total = Math.max(0, subtotal - discountAmount);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [initialized, setInitialized] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-
-  const toggleCart = () => setIsOpen((prev) => !prev);
-
-  useEffect(() => {
-    // Load cart from localStorage on mount
-    const savedCart = localStorage.getItem("cart");
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        setItems(Array.isArray(parsedCart) ? parsedCart : []);
-      } catch (error) {
-        console.error("Error parsing cart from localStorage:", error);
-        setItems([]);
-      }
-    }
-    setInitialized(true);
-  }, []);
-
-  useEffect(() => {
-    // Save cart to localStorage whenever it changes
-    if (initialized) {
-      localStorage.setItem("cart", JSON.stringify(items));
-    }
-  }, [items, initialized]);
-
-  const { subtotal, total } = calculateTotals(items);
-
-  const addItem = (newItem: CartItem) => {
-    console.log("Adding new item:", newItem);
-    console.log("Current cart items:", items);
-
+  const addItem = (newItem: Omit<CartItem, "id">) => {
     setItems((currentItems) => {
       // Generate a stable ID based on product attributes
-      const stableId = `${newItem.productId}${
-        newItem.size ? `-${newItem.size}` : ""
-      }${newItem.color ? `-${newItem.color}` : ""}`;
+      const stableId = `${newItem.productId}-${newItem.size || "no-size"}-${
+        newItem.color || "no-color"
+      }`;
 
-      // Check if exact same item exists using the stable ID
-      const existingItem = currentItems.find(
-        (item) =>
-          `${item.productId}${item.size ? `-${item.size}` : ""}${
-            item.color ? `-${item.color}` : ""
-          }` === stableId
+      // Check if item already exists in cart
+      const existingItemIndex = currentItems.findIndex(
+        (item) => item.id === stableId
       );
 
-      if (existingItem) {
+      if (existingItemIndex !== -1) {
         // Update quantity of existing item
-        const updatedItems = currentItems.map((item) =>
-          item.id === existingItem.id
-            ? { ...item, quantity: item.quantity + newItem.quantity }
-            : item
-        );
+        const updatedItems = [...currentItems];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + newItem.quantity,
+        };
         console.log("Updated items:", updatedItems);
         return updatedItems;
       }
@@ -136,6 +170,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
+    setDiscount(null);
+  };
+
+  const applyDiscount = (newDiscount: Discount) => {
+    setDiscount(newDiscount);
+  };
+
+  const removeDiscount = () => {
+    setDiscount(null);
   };
 
   // Calculate total item count (sum of quantities)
@@ -152,6 +195,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     total,
     isOpen,
     toggleCart,
+    discount,
+    applyDiscount,
+    removeDiscount,
+    discountAmount,
+    isLoaded,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

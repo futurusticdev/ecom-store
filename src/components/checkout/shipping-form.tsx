@@ -51,12 +51,12 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-      <div className="grid grid-cols-2 gap-4">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6" noValidate>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label
             htmlFor="firstName"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700"
           >
             First name
           </label>
@@ -67,14 +67,14 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
             required
             value={formData.firstName}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
           />
         </div>
 
         <div>
           <label
             htmlFor="lastName"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700"
           >
             Last name
           </label>
@@ -85,7 +85,7 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
             required
             value={formData.lastName}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
           />
         </div>
       </div>
@@ -93,7 +93,7 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
       <div>
         <label
           htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-xs sm:text-sm font-medium text-gray-700"
         >
           Email address
         </label>
@@ -104,14 +104,14 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
           required
           value={formData.email}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
         />
       </div>
 
       <div>
         <label
           htmlFor="phone"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-xs sm:text-sm font-medium text-gray-700"
         >
           Phone number
         </label>
@@ -123,14 +123,14 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
           pattern="[0-9]{10,}"
           value={formData.phone}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
         />
       </div>
 
       <div>
         <label
           htmlFor="address"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-xs sm:text-sm font-medium text-gray-700"
         >
           Address
         </label>
@@ -141,14 +141,14 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
           required
           value={formData.address}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
         />
       </div>
 
       <div>
         <label
           htmlFor="apartment"
-          className="block text-sm font-medium text-gray-700"
+          className="block text-xs sm:text-sm font-medium text-gray-700"
         >
           Apartment, suite, etc.
         </label>
@@ -158,15 +158,15 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
           name="apartment"
           value={formData.apartment}
           onChange={handleChange}
-          className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+          className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label
             htmlFor="city"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700"
           >
             City
           </label>
@@ -177,14 +177,14 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
             required
             value={formData.city}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
           />
         </div>
 
         <div>
           <label
             htmlFor="state"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700"
           >
             State / Province
           </label>
@@ -195,16 +195,16 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
             required
             value={formData.state}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label
             htmlFor="postalCode"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700"
           >
             Postal code
           </label>
@@ -216,14 +216,14 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
             pattern="[0-9]{5,}"
             value={formData.postalCode}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
           />
         </div>
 
         <div>
           <label
             htmlFor="country"
-            className="block text-sm font-medium text-gray-700"
+            className="block text-xs sm:text-sm font-medium text-gray-700"
           >
             Country
           </label>
@@ -234,15 +234,15 @@ export function ShippingForm({ onSubmit }: ShippingFormProps) {
             required
             value={formData.country}
             onChange={handleChange}
-            className="mt-1 block w-full rounded-md border border-gray-200 px-3 py-2 focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
+            className="mt-1 block w-full rounded-md border border-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 text-sm focus:border-black focus:outline-none focus:ring-1 focus:ring-black"
           />
         </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         <button
           type="submit"
-          className="w-full rounded-md border border-transparent bg-black px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+          className="w-full rounded-md border border-transparent bg-black px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-white shadow-sm hover:bg-black/90 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
         >
           Continue to payment
         </button>

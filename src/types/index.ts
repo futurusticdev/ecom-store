@@ -23,3 +23,15 @@ export interface Category {
 export type ProductWithDetails = Product & {
   category: Category;
 };
+
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image: string;
+  productId?: string;
+  size?: string;
+  color?: string;
+  category?: string;
+}

@@ -6,7 +6,7 @@ import { CheckCircle } from "lucide-react";
 
 export default function ThankYouPage() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId") || "000100";
+  const orderId = searchParams?.get("orderId") || "000100";
 
   return (
     <div className="min-h-screen bg-white">
