@@ -1,6 +1,3 @@
-import { format, subDays } from "date-fns";
-import { fetchWithFallback, fetchWithCache } from "@/lib/data-utils";
-
 // API endpoints
 const API_ENDPOINTS = {
   STATS: "/api/dashboard",
@@ -48,12 +45,22 @@ export interface Order {
   }[];
 }
 
+export interface ActivityData {
+  userId?: string;
+  orderId?: string;
+  reviewId?: string;
+  productId?: string;
+  status?: string;
+  rating?: number;
+  [key: string]: string | number | boolean | null | undefined;
+}
+
 export interface Activity {
   id: string;
   type: string;
   message: string;
   timestamp: Date;
-  data: Record<string, any>;
+  data: ActivityData;
 }
 
 export interface SalesDataPoint {

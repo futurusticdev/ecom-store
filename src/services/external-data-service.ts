@@ -3,132 +3,8 @@
  * This service provides realistic data for the e-commerce store dashboard
  */
 
-import { format, subDays, addDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import { DashboardStats, Order, Activity } from "./dashboard-service";
-
-// Public APIs that could be used for real data (currently using generated data)
-const PUBLIC_APIS = {
-  PRODUCTS: "https://fakestoreapi.com/products",
-  USERS: "https://fakestoreapi.com/users",
-  ORDERS: "https://fakestoreapi.com/carts",
-};
-
-// E-commerce product categories
-const PRODUCT_CATEGORIES = [
-  "Electronics",
-  "Clothing",
-  "Home & Kitchen",
-  "Beauty & Personal Care",
-  "Books",
-  "Toys & Games",
-  "Sports & Outdoors",
-  "Jewelry",
-];
-
-// E-commerce product names
-const PRODUCT_NAMES = {
-  Electronics: [
-    "Wireless Earbuds",
-    "Smart Watch",
-    "Bluetooth Speaker",
-    "Tablet Pro",
-    "Ultra HD Monitor",
-    "Gaming Keyboard",
-    "Wireless Charger",
-  ],
-  Clothing: [
-    "Premium Denim Jeans",
-    "Cotton T-Shirt",
-    "Wool Sweater",
-    "Leather Jacket",
-    "Summer Dress",
-    "Athletic Shorts",
-    "Winter Coat",
-  ],
-  "Home & Kitchen": [
-    "Coffee Maker",
-    "Air Fryer",
-    "Knife Set",
-    "Bedding Set",
-    "Towel Collection",
-    "Cookware Set",
-    "Smart Thermostat",
-  ],
-  "Beauty & Personal Care": [
-    "Facial Cleanser",
-    "Moisturizer",
-    "Hair Dryer",
-    "Perfume Collection",
-    "Makeup Set",
-    "Electric Toothbrush",
-    "Skincare Kit",
-  ],
-  Books: [
-    "Bestseller Novel",
-    "Cookbook",
-    "Self-Help Guide",
-    "Children's Book",
-    "Business Strategy",
-    "Science Fiction",
-    "Biography",
-  ],
-  "Toys & Games": [
-    "Building Blocks",
-    "Board Game",
-    "Action Figure",
-    "Remote Control Car",
-    "Educational Toy",
-    "Puzzle Set",
-    "Doll Collection",
-  ],
-  "Sports & Outdoors": [
-    "Yoga Mat",
-    "Fitness Tracker",
-    "Tennis Racket",
-    "Camping Tent",
-    "Basketball",
-    "Hiking Backpack",
-    "Golf Clubs",
-  ],
-  Jewelry: [
-    "Diamond Earrings",
-    "Gold Necklace",
-    "Silver Bracelet",
-    "Watch Collection",
-    "Pearl Set",
-    "Engagement Ring",
-    "Gemstone Pendant",
-  ],
-};
-
-// Customer names
-const CUSTOMERS = [
-  "Sarah Johnson",
-  "Michael Chen",
-  "Emily Wilson",
-  "David Rodriguez",
-  "Jennifer Lee",
-  "Robert Smith",
-  "Lisa Wang",
-  "James Brown",
-  "Maria Garcia",
-  "Thomas Anderson",
-  "Emma Davis",
-  "Daniel Martinez",
-  "Olivia Taylor",
-  "William Thompson",
-];
-
-// Product tiers
-const PRODUCT_TIERS = [
-  "Basic",
-  "Standard",
-  "Premium",
-  "Deluxe",
-  "Ultimate",
-  "Professional",
-  "Limited Edition",
-];
 
 /**
  * Generate realistic sales data for the past N days
@@ -176,42 +52,31 @@ export async function fetchSalesData(
  */
 export async function generateRealDashboardStats(): Promise<DashboardStats> {
   try {
-    // Current month values with realistic e-commerce numbers
     const currentTotalSales = 86161000; // $86.16M
     const currentTotalOrders = 2343165;
     const currentNewCustomers = 520920;
     const currentConversionRate = -0.8;
 
-    // Previous month values with realistic changes
-    const previousTotalSales = currentTotalSales / 1.014; // 1.4% increase
-    const previousTotalOrders = currentTotalOrders / 1.021; // 2.1% increase
-    const previousNewCustomers = currentNewCustomers; // 0% change
-    const previousConversionRate = currentConversionRate - 0.7; // 0.7% increase
-
     return {
       totalSales: {
-        current: currentTotalSales,
-        previous: Math.round(previousTotalSales),
-        percentChange: 1.4,
+        value: currentTotalSales,
+        change: "1.4",
       },
       totalOrders: {
-        current: currentTotalOrders,
-        previous: Math.round(previousTotalOrders),
-        percentChange: 2.1,
+        value: currentTotalOrders,
+        change: "2.1",
       },
       newCustomers: {
-        current: currentNewCustomers,
-        previous: Math.round(previousNewCustomers),
-        percentChange: 0.0,
+        value: currentNewCustomers,
+        change: "0.0",
       },
       conversionRate: {
-        current: currentConversionRate,
-        previous: previousConversionRate,
-        percentChange: 0.7,
+        value: currentConversionRate.toString(),
+        change: "0.7",
       },
     };
   } catch (error) {
-    console.error("Error generating dashboard stats:", error);
+    console.log("Error generating dashboard stats:", error);
     throw error;
   }
 }
@@ -221,74 +86,114 @@ export async function generateRealDashboardStats(): Promise<DashboardStats> {
  */
 export async function generateRealOrders(limit: number = 5): Promise<Order[]> {
   try {
-    // Create orders with realistic e-commerce data
-    const orders: Order[] = [];
-    const today = new Date();
-    const currentYear = today.getFullYear();
-
-    // Sample order data matching the user's example
+    // Sample orders with realistic data
     const sampleOrders = [
       {
-        id: "ORD-7892",
-        customer: "Sarah Johnson",
-        product: "Premium Subscription",
-        date: format(addDays(today, 0), "MMM dd, yyyy").replace(
-          /\d{4}$/,
-          "2025"
-        ),
-        status: "Shipped",
-        amount: "$861,610",
+        id: "ORD-7880",
+        customer: {
+          name: "Sarah Johnson",
+          email: "sarah.johnson@example.com",
+          image: null,
+        },
+        status: "PROCESSING",
+        total: 861610,
+        date: new Date(2025, 1, 22),
+        items: [
+          {
+            id: "item-1000",
+            productName: "Premium Subscription",
+            quantity: 1,
+            price: 861610,
+            image: null,
+          },
+        ],
       },
       {
-        id: "ORD-7891",
-        customer: "Michael Chen",
-        product: "Gold Package",
-        date: format(addDays(today, -1), "MMM dd, yyyy").replace(
-          /\d{4}$/,
-          "2025"
-        ),
-        status: "Shipped",
-        amount: "$23,713",
+        id: "ORD-7881",
+        customer: {
+          name: "Michael Chen",
+          email: "michael.chen@example.com",
+          image: null,
+        },
+        status: "SHIPPED",
+        total: 23713,
+        date: new Date(2025, 1, 23),
+        items: [
+          {
+            id: "item-1001",
+            productName: "Gold Package",
+            quantity: 1,
+            price: 23713,
+            image: null,
+          },
+        ],
       },
       {
-        id: "ORD-7890",
-        customer: "Emily Wilson",
-        product: "Silver Package",
-        date: format(addDays(today, -2), "MMM dd, yyyy").replace(
-          /\d{4}$/,
-          "2025"
-        ),
-        status: "Processing",
-        amount: "$10",
+        id: "ORD-7882",
+        customer: {
+          name: "Emily Wilson",
+          email: "emily.wilson@example.com",
+          image: null,
+        },
+        status: "DELIVERED",
+        total: 10,
+        date: new Date(2025, 1, 24),
+        items: [
+          {
+            id: "item-1002",
+            productName: "Silver Package",
+            quantity: 1,
+            price: 10,
+            image: null,
+          },
+        ],
       },
       {
-        id: "ORD-7889",
-        customer: "David Rodriguez",
-        product: "Digital Asset Bundle",
-        date: format(addDays(today, -3), "MMM dd, yyyy").replace(
-          /\d{4}$/,
-          "2025"
-        ),
-        status: "Shipped",
-        amount: "$22",
+        id: "ORD-7883",
+        customer: {
+          name: "David Rodriguez",
+          email: "david.rodriguez@example.com",
+          image: null,
+        },
+        status: "CANCELLED",
+        total: 22,
+        date: new Date(2025, 1, 25),
+        items: [
+          {
+            id: "item-1003",
+            productName: "Digital Asset Bundle",
+            quantity: 1,
+            price: 22,
+            image: null,
+          },
+        ],
       },
       {
-        id: "ORD-7888",
-        customer: "Jennifer Lee",
-        product: "Enterprise License",
-        date: format(addDays(today, -4), "MMM dd, yyyy").replace(
-          /\d{4}$/,
-          "2025"
-        ),
-        status: "Shipped",
-        amount: "$6,093",
+        id: "ORD-7884",
+        customer: {
+          name: "Jennifer Lee",
+          email: "jennifer.lee@example.com",
+          image: null,
+        },
+        status: "PROCESSING",
+        total: 6093,
+        date: new Date(2025, 1, 26),
+        items: [
+          {
+            id: "item-1004",
+            productName: "Enterprise License",
+            quantity: 1,
+            price: 6093,
+            image: null,
+          },
+        ],
       },
     ];
 
     // Return the sample orders limited to the requested amount
     return sampleOrders.slice(0, limit);
   } catch (error) {
-    console.error("Error generating orders:", error);
+    console.log("Error generating orders:", error);
     throw error;
   }
 }
@@ -300,44 +205,61 @@ export async function generateRealActivity(
   limit: number = 5
 ): Promise<Activity[]> {
   try {
-    // Sample activity data with e-commerce activities
-    const sampleActivities = [
+    // Sample activities with realistic data
+    const now = new Date();
+
+    const sampleActivities: Activity[] = [
       {
-        id: "act-001",
-        type: "New customer registered",
-        time: "2 minutes ago",
-        icon: "user",
+        id: "act-1000",
+        type: "NEW_USER",
+        message: "New customer registered",
+        timestamp: new Date(now.getTime() - 2 * 60 * 1000), // 2 minutes ago
+        data: {},
       },
       {
-        id: "act-002",
-        type: "Order #ORD-7891 cancelled",
-        time: "15 minutes ago",
-        icon: "order",
+        id: "act-1001",
+        type: "ORDER_STATUS",
+        message: "Order #ORD-7891 cancelled",
+        timestamp: new Date(now.getTime() - 15 * 60 * 1000), // 15 minutes ago
+        data: {
+          orderId: "ORD-7891",
+          status: "CANCELLED",
+        },
       },
       {
-        id: "act-003",
-        type: "Premium Subscription added to store",
-        time: "1 hour ago",
-        icon: "product",
+        id: "act-1002",
+        type: "STORE_UPDATE",
+        message: "Premium Subscription added to store",
+        timestamp: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
+        data: {
+          productId: "prod-1234",
+        },
       },
       {
-        id: "act-004",
-        type: "New business account created",
-        time: "3 hours ago",
-        icon: "user",
+        id: "act-1003",
+        type: "NEW_ACCOUNT",
+        message: "New business account created",
+        timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000), // 3 hours ago
+        data: {
+          accountType: "business",
+        },
       },
       {
-        id: "act-005",
-        type: "Order #ORD-7885 shipped",
-        time: "5 hours ago",
-        icon: "order",
+        id: "act-1004",
+        type: "ORDER_STATUS",
+        message: "Order #ORD-7885 shipped",
+        timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000), // 5 hours ago
+        data: {
+          orderId: "ORD-7885",
+          status: "SHIPPED",
+        },
       },
     ];
 
     // Return the sample activities limited to the requested amount
     return sampleActivities.slice(0, limit);
   } catch (error) {
-    console.error("Error generating activities:", error);
+    console.log("Error generating activities:", error);
     throw error;
   }
 }

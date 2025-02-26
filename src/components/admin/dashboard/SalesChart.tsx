@@ -8,12 +8,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  getSalesData,
-  SalesDataPoint,
-  SalesSummary,
-} from "@/services/dashboard-service";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getSalesData, SalesDataPoint } from "@/services/dashboard-service";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AreaChart,
@@ -27,9 +23,21 @@ import {
 import { AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 
+// Define proper types for the tooltip props
+interface TooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    dataKey: string;
+    name: string;
+    color: string;
+    fill: string;
+  }>;
+  label?: string;
+}
+
 export function SalesChart() {
   const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
-  const [summary, setSummary] = useState<SalesSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<"7d" | "30d" | "90d">("7d");
@@ -43,13 +51,11 @@ export function SalesChart() {
         const result = await getSalesData(timeframe);
 
         // Validate the data structure
-        if (result && Array.isArray(result.salesData) && result.summary) {
+        if (result && Array.isArray(result.salesData)) {
           setSalesData(result.salesData);
-          setSummary(result.summary);
         } else {
           console.error("Expected sales data object but got:", result);
           setSalesData([]);
-          setSummary(null);
           setError("Received invalid data format from server");
         }
       } catch (err) {
@@ -89,11 +95,11 @@ export function SalesChart() {
   };
 
   // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border rounded-md shadow-sm p-2 text-sm">
-          <p className="font-medium">{formatDate(label)}</p>
+          <p className="font-medium">{formatDate(label || "")}</p>
           <p className="text-primary">
             Sales: {formatCurrency(payload[0].value)}
           </p>

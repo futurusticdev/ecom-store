@@ -2,6 +2,23 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { checkDatabaseConnection } from "@/lib/db-check";
 
+// Define types for our data structures
+interface Order {
+  id: string;
+  total: number;
+  status: string;
+  userId: string | null;
+  createdAt: Date;
+}
+
+// Define the type for a single unique customer result
+interface UniqueCustomer {
+  userId: string;
+  _count: {
+    id: number;
+  };
+}
+
 export async function GET() {
   try {
     // First check database connection
@@ -18,7 +35,7 @@ export async function GET() {
     }
 
     // Get total sales
-    let orders = [];
+    let orders: Order[] = [];
     try {
       orders = await prisma.order.findMany({
         where: {
@@ -62,16 +79,27 @@ export async function GET() {
     }
 
     // Calculate conversion rate (orders / unique users who placed orders)
-    let uniqueCustomers = [];
+    let uniqueCustomers: UniqueCustomer[] = [];
     let totalUsers = 0;
 
     try {
-      uniqueCustomers = await prisma.order.groupBy({
-        by: ["userId"],
+      // Fix: Use the raw Prisma query to avoid TypeScript errors
+      const groupResult = await prisma.$queryRaw<
+        Array<{ userId: string; count: number }>
+      >`
+        SELECT "userId", COUNT("id") as count
+        FROM "Order"
+        WHERE "userId" IS NOT NULL
+        GROUP BY "userId"
+      `;
+
+      // Transform the raw query result to match our UniqueCustomer interface
+      uniqueCustomers = groupResult.map((result) => ({
+        userId: result.userId,
         _count: {
-          id: true,
+          id: Number(result.count),
         },
-      });
+      }));
 
       totalUsers = await prisma.user.count();
     } catch (conversionError) {
@@ -89,9 +117,9 @@ export async function GET() {
     const twoMonthsAgo = new Date();
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-    let previousMonthOrders = [];
+    let previousMonthOrders: Order[] = [];
     let previousMonthNewCustomers = 0;
-    let previousMonthUniqueCustomers = [];
+    let previousMonthUniqueCustomers: UniqueCustomer[] = [];
     let previousMonthTotalUsers = 0;
 
     try {
@@ -117,18 +145,25 @@ export async function GET() {
       });
 
       // Calculate previous month's conversion rate
-      previousMonthUniqueCustomers = await prisma.order.groupBy({
-        by: ["userId"],
-        where: {
-          createdAt: {
-            gte: twoMonthsAgo,
-            lt: oneMonthAgo,
-          },
-        },
+      // Fix: Use the raw Prisma query to avoid TypeScript errors
+      const previousGroupResult = await prisma.$queryRaw<
+        Array<{ userId: string; count: number }>
+      >`
+        SELECT "userId", COUNT("id") as count
+        FROM "Order"
+        WHERE "userId" IS NOT NULL
+        AND "createdAt" >= ${twoMonthsAgo}
+        AND "createdAt" < ${oneMonthAgo}
+        GROUP BY "userId"
+      `;
+
+      // Transform the raw query result to match our UniqueCustomer interface
+      previousMonthUniqueCustomers = previousGroupResult.map((result) => ({
+        userId: result.userId,
         _count: {
-          id: true,
+          id: Number(result.count),
         },
-      });
+      }));
 
       previousMonthTotalUsers = await prisma.user.count({
         where: {

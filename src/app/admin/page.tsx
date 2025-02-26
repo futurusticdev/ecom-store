@@ -1,6 +1,5 @@
 "use client";
 
-import { Metadata } from "next";
 import { StatsCards } from "@/components/admin/dashboard/StatsCards";
 import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { RecentOrders } from "@/components/admin/dashboard/RecentOrders";

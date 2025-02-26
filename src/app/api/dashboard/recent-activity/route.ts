@@ -1,6 +1,43 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+// Define types for our data structures
+interface RecentUser {
+  id: string;
+  name: string | null;
+  emailVerified: Date | null;
+}
+
+interface RecentOrder {
+  id: string;
+  status: string;
+  createdAt: Date;
+}
+
+interface RecentReview {
+  id: string;
+  rating: number;
+  createdAt: Date;
+  product: {
+    name: string | null;
+  } | null;
+  user: {
+    name: string | null;
+  } | null;
+}
+
+interface ActivityData {
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+interface Activity {
+  id: string;
+  type: string;
+  message: string;
+  timestamp: Date;
+  data: ActivityData;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,7 +47,7 @@ export async function GET(request: Request) {
     try {
       await prisma.$connect();
     } catch (connectionError) {
-      console.error("Database connection error:", { connectionError });
+      console.log("Database connection error:", connectionError);
       return NextResponse.json(
         { error: "Database connection failed", activities: [] },
         { status: 500 }
@@ -18,7 +55,7 @@ export async function GET(request: Request) {
     }
 
     // Get recent user registrations
-    let recentUsers = [];
+    let recentUsers: RecentUser[] = [];
     try {
       recentUsers = await prisma.user.findMany({
         take: limit,
@@ -37,7 +74,7 @@ export async function GET(request: Request) {
     }
 
     // Get recent orders
-    let recentOrders = [];
+    let recentOrders: RecentOrder[] = [];
     try {
       recentOrders = await prisma.order.findMany({
         take: limit,
@@ -56,7 +93,7 @@ export async function GET(request: Request) {
     }
 
     // Get recent reviews
-    let recentReviews = [];
+    let recentReviews: RecentReview[] = [];
     try {
       recentReviews = await prisma.review.findMany({
         take: limit,
@@ -85,7 +122,7 @@ export async function GET(request: Request) {
     }
 
     // Combine and sort all activities
-    const activities = [
+    const activities: Activity[] = [
       ...recentUsers.map((user) => ({
         id: `user-${user.id}`,
         type: "NEW_USER",

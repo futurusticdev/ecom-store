@@ -8,21 +8,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ChevronRight,
   Users,
-  ShoppingBag,
-  Tag,
   AlertCircle,
   User,
   ShoppingCart,
-  Package,
   Star,
+  Tag,
   Settings,
 } from "lucide-react";
-import Link from "next/link";
 import { getRecentActivity, Activity } from "@/services/dashboard-service";
 import { formatDistanceToNow } from "date-fns";
 

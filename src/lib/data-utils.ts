@@ -46,7 +46,7 @@ export async function fetchWithFallback<T>(
 /**
  * Stores data in localStorage with expiration
  */
-export function storeWithExpiry(key: string, value: any, ttl: number) {
+export function storeWithExpiry<T>(key: string, value: T, ttl: number): void {
   const now = new Date();
   const item = {
     value: value,
