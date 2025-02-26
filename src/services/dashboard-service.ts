@@ -246,15 +246,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     if (data && data.stats) {
       return data.stats;
     } else {
-      console.error(
-        "API returned unexpected format for dashboard stats:",
-        data
-      );
+      console.log("API returned unexpected format for dashboard stats:", data);
       // If data is not in expected format, return mock data
       return generateMockDashboardStats();
     }
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
+    console.log("Error fetching dashboard stats:", error);
     // Fall back to mock data on error
     return generateMockDashboardStats();
   }
@@ -273,14 +270,14 @@ export async function getRecentOrders(limit: number = 5): Promise<Order[]> {
     if (data && Array.isArray(data.orders)) {
       return data.orders;
     } else if (data && typeof data === "object" && !Array.isArray(data)) {
-      console.error("API returned unexpected format:", data);
+      console.log("API returned unexpected format:", data);
       // If data is not in expected format, return mock data
       return generateMockRecentOrders(limit);
     } else {
       return [];
     }
   } catch (error) {
-    console.error("Error fetching recent orders:", error);
+    console.log("Error fetching recent orders:", error);
     // Fall back to mock data on error
     return generateMockRecentOrders(limit);
   }
@@ -310,7 +307,8 @@ export async function getRecentActivity(
     // Handle HTTP errors
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");
-      console.error(`API error (${response.status}): ${errorText}`);
+      // Fix for Next.js 15 error handling issue
+      console.log(`API error (${response.status}):`, errorText);
       throw new Error(
         `Failed to fetch recent activity: ${response.status} ${response.statusText}`
       );
@@ -323,16 +321,16 @@ export async function getRecentActivity(
     if (data && Array.isArray(data.activities)) {
       return data.activities;
     } else {
-      console.error("API returned unexpected format for activities:", data);
+      console.log("API returned unexpected format for activities:", data);
       // If data is not in expected format, return mock data
       return generateMockRecentActivity(limit);
     }
   } catch (error) {
     // Handle different types of errors
     if (error instanceof DOMException && error.name === "AbortError") {
-      console.error("Request timed out fetching recent activity");
+      console.log("Request timed out fetching recent activity");
     } else {
-      console.error("Error fetching recent activity:", error);
+      console.log("Error fetching recent activity:", error);
     }
 
     // Try to get from cache if available
@@ -348,7 +346,7 @@ export async function getRecentActivity(
           return parsed.value;
         }
       } catch (e) {
-        console.error("Error parsing cached activity data:", e);
+        console.log("Error parsing cached activity data:", e);
       }
     }
 
@@ -372,12 +370,12 @@ export async function getSalesData(
     if (data && Array.isArray(data.salesData) && data.summary) {
       return data;
     } else {
-      console.error("API returned unexpected format for sales data:", data);
+      console.log("API returned unexpected format for sales data:", data);
       // If data is not in expected format, return mock data
       return generateMockSalesData(period);
     }
   } catch (error) {
-    console.error("Error fetching sales data:", error);
+    console.log("Error fetching sales data:", error);
 
     // Try to get from cache if available
     const cachedData =
@@ -392,7 +390,7 @@ export async function getSalesData(
           return parsed.value;
         }
       } catch (e) {
-        console.error("Error parsing cached sales data:", e);
+        console.log("Error parsing cached sales data:", e);
       }
     }
 

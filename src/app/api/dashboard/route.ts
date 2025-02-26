@@ -48,7 +48,7 @@ export async function GET() {
     try {
       newCustomers = await prisma.user.count({
         where: {
-          createdAt: {
+          emailVerified: {
             gte: oneMonthAgo,
           },
         },
@@ -109,7 +109,7 @@ export async function GET() {
 
       previousMonthNewCustomers = await prisma.user.count({
         where: {
-          createdAt: {
+          emailVerified: {
             gte: twoMonthsAgo,
             lt: oneMonthAgo,
           },
@@ -132,7 +132,7 @@ export async function GET() {
 
       previousMonthTotalUsers = await prisma.user.count({
         where: {
-          createdAt: {
+          emailVerified: {
             lt: oneMonthAgo,
           },
         },

@@ -23,16 +23,16 @@ export async function GET(request: Request) {
       recentUsers = await prisma.user.findMany({
         take: limit,
         orderBy: {
-          createdAt: "desc",
+          emailVerified: "desc",
         },
         select: {
           id: true,
           name: true,
-          createdAt: true,
+          emailVerified: true,
         },
       });
     } catch (userError) {
-      console.error("Error fetching recent users:", { userError });
+      console.log("Error fetching recent users:", userError);
       // Continue with empty array
     }
 
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         },
       });
     } catch (orderError) {
-      console.error("Error fetching recent orders:", { orderError });
+      console.log("Error fetching recent orders:", orderError);
       // Continue with empty array
     }
 
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
         },
       });
     } catch (reviewError) {
-      console.error("Error fetching recent reviews:", { reviewError });
+      console.log("Error fetching recent reviews:", reviewError);
       // Continue with empty array
     }
 
@@ -90,7 +90,7 @@ export async function GET(request: Request) {
         id: `user-${user.id}`,
         type: "NEW_USER",
         message: `New customer ${user.name || "Anonymous"} registered`,
-        timestamp: user.createdAt,
+        timestamp: user.emailVerified || new Date(),
         data: { userId: user.id },
       })),
       ...recentOrders.map((order) => ({
@@ -125,7 +125,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ activities });
   } catch (error) {
-    console.error("Error fetching recent activity:", { error });
+    console.log("Error fetching recent activity:", error);
     return NextResponse.json(
       { error: "Error fetching recent activity", activities: [] },
       { status: 500 }
