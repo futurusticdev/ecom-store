@@ -1,249 +1,343 @@
 /**
- * Service to fetch real data from external APIs
- * This service attempts to fetch real-world data from public APIs
- * to provide more realistic data for the dashboard
+ * Service to fetch real data from external APIs and generate realistic e-commerce data
+ * This service provides realistic data for the e-commerce store dashboard
  */
 
-import { format, subDays } from "date-fns";
+import { format, subDays, addDays } from "date-fns";
 import { DashboardStats, Order, Activity } from "./dashboard-service";
 
-// Public APIs that don't require authentication
+// Public APIs that could be used for real data (currently using generated data)
 const PUBLIC_APIS = {
-  CRYPTO:
-    "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1",
-  STOCKS:
-    "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=MSFT&apikey=demo",
-  NEWS: "https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey=YOUR_API_KEY",
+  PRODUCTS: "https://fakestoreapi.com/products",
+  USERS: "https://fakestoreapi.com/users",
+  ORDERS: "https://fakestoreapi.com/carts",
 };
 
+// E-commerce product categories
+const PRODUCT_CATEGORIES = [
+  "Electronics",
+  "Clothing",
+  "Home & Kitchen",
+  "Beauty & Personal Care",
+  "Books",
+  "Toys & Games",
+  "Sports & Outdoors",
+  "Jewelry",
+];
+
+// E-commerce product names
+const PRODUCT_NAMES = {
+  Electronics: [
+    "Wireless Earbuds",
+    "Smart Watch",
+    "Bluetooth Speaker",
+    "Tablet Pro",
+    "Ultra HD Monitor",
+    "Gaming Keyboard",
+    "Wireless Charger",
+  ],
+  Clothing: [
+    "Premium Denim Jeans",
+    "Cotton T-Shirt",
+    "Wool Sweater",
+    "Leather Jacket",
+    "Summer Dress",
+    "Athletic Shorts",
+    "Winter Coat",
+  ],
+  "Home & Kitchen": [
+    "Coffee Maker",
+    "Air Fryer",
+    "Knife Set",
+    "Bedding Set",
+    "Towel Collection",
+    "Cookware Set",
+    "Smart Thermostat",
+  ],
+  "Beauty & Personal Care": [
+    "Facial Cleanser",
+    "Moisturizer",
+    "Hair Dryer",
+    "Perfume Collection",
+    "Makeup Set",
+    "Electric Toothbrush",
+    "Skincare Kit",
+  ],
+  Books: [
+    "Bestseller Novel",
+    "Cookbook",
+    "Self-Help Guide",
+    "Children's Book",
+    "Business Strategy",
+    "Science Fiction",
+    "Biography",
+  ],
+  "Toys & Games": [
+    "Building Blocks",
+    "Board Game",
+    "Action Figure",
+    "Remote Control Car",
+    "Educational Toy",
+    "Puzzle Set",
+    "Doll Collection",
+  ],
+  "Sports & Outdoors": [
+    "Yoga Mat",
+    "Fitness Tracker",
+    "Tennis Racket",
+    "Camping Tent",
+    "Basketball",
+    "Hiking Backpack",
+    "Golf Clubs",
+  ],
+  Jewelry: [
+    "Diamond Earrings",
+    "Gold Necklace",
+    "Silver Bracelet",
+    "Watch Collection",
+    "Pearl Set",
+    "Engagement Ring",
+    "Gemstone Pendant",
+  ],
+};
+
+// Customer names
+const CUSTOMERS = [
+  "Sarah Johnson",
+  "Michael Chen",
+  "Emily Wilson",
+  "David Rodriguez",
+  "Jennifer Lee",
+  "Robert Smith",
+  "Lisa Wang",
+  "James Brown",
+  "Maria Garcia",
+  "Thomas Anderson",
+  "Emma Davis",
+  "Daniel Martinez",
+  "Olivia Taylor",
+  "William Thompson",
+];
+
+// Product tiers
+const PRODUCT_TIERS = [
+  "Basic",
+  "Standard",
+  "Premium",
+  "Deluxe",
+  "Ultimate",
+  "Professional",
+  "Limited Edition",
+];
+
 /**
- * Fetch real-time cryptocurrency data to use for sales data
+ * Generate realistic sales data for the past N days
  */
-export async function fetchCryptoData(
+export async function fetchSalesData(
   days: number = 7
 ): Promise<{ date: string; sales: number }[]> {
   try {
-    const response = await fetch(PUBLIC_APIS.CRYPTO);
-    if (!response.ok) throw new Error("Failed to fetch crypto data");
+    // Generate dates for the past N days with realistic sales data
+    const result = [];
+    const baseValue = 86000; // Base value for sales
 
-    const data = await response.json();
+    for (let i = days - 1; i >= 0; i--) {
+      const date = subDays(new Date(), i);
 
-    // Use crypto prices as sales data
-    return data.slice(0, days).map((coin: any, index: number) => {
-      const date = subDays(new Date(), days - index - 1);
-      // Use market cap as "sales" value, scaled down
-      const sales = Math.round(coin.market_cap / 10000000);
+      // Create realistic variations in daily sales
+      // Weekends typically have higher sales
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-      return {
+      // Base multiplier with some randomness
+      const randomFactor = 0.85 + Math.random() * 0.3; // Between 0.85 and 1.15
+
+      // Weekend boost
+      const weekendBoost = isWeekend ? 1.3 : 1.0;
+
+      // Calculate sales with variation
+      const sales = Math.round(baseValue * randomFactor * weekendBoost);
+
+      result.push({
         date: format(date, "MMM dd"),
         sales,
-      };
-    });
+      });
+    }
+
+    return result;
   } catch (error) {
-    console.error("Error fetching crypto data:", error);
+    console.error("Error generating sales data:", error);
     throw error;
   }
 }
 
 /**
- * Generate dashboard stats based on real crypto market data
+ * Generate realistic dashboard statistics for an e-commerce store
  */
 export async function generateRealDashboardStats(): Promise<DashboardStats> {
   try {
-    const response = await fetch(PUBLIC_APIS.CRYPTO);
-    if (!response.ok) throw new Error("Failed to fetch crypto data");
+    // Current month values with realistic e-commerce numbers
+    const currentTotalSales = 86161000; // $86.16M
+    const currentTotalOrders = 2343165;
+    const currentNewCustomers = 520920;
+    const currentConversionRate = -0.8;
 
-    const data = await response.json();
+    // Previous month values with realistic changes
+    const previousTotalSales = currentTotalSales / 1.014; // 1.4% increase
+    const previousTotalOrders = currentTotalOrders / 1.021; // 2.1% increase
+    const previousNewCustomers = currentNewCustomers; // 0% change
+    const previousConversionRate = currentConversionRate - 0.7; // 0.7% increase
 
-    // Use first 4 cryptocurrencies for our stats
-    const bitcoin = data[0];
-    const ethereum = data[1];
-    const binance = data[2];
-    const ripple = data[3];
-
-    // Calculate percent changes
-    const calculatePercentChange = (
-      current: number,
-      previous: number
-    ): number => {
-      return Number((((current - previous) / previous) * 100).toFixed(1));
-    };
-
-    // Use real price changes for our stats
     return {
       totalSales: {
-        current: Math.round(bitcoin.current_price * 1000),
-        previous: Math.round(
-          (bitcoin.current_price * 1000) /
-            (1 + bitcoin.price_change_percentage_24h / 100)
-        ),
-        percentChange: bitcoin.price_change_percentage_24h,
+        current: currentTotalSales,
+        previous: Math.round(previousTotalSales),
+        percentChange: 1.4,
       },
       totalOrders: {
-        current: Math.round(ethereum.total_volume / 10000),
-        previous: Math.round(
-          ethereum.total_volume /
-            10000 /
-            (1 + ethereum.price_change_percentage_24h / 100)
-        ),
-        percentChange: ethereum.price_change_percentage_24h,
+        current: currentTotalOrders,
+        previous: Math.round(previousTotalOrders),
+        percentChange: 2.1,
       },
       newCustomers: {
-        current: Math.round(binance.total_volume / 100000),
-        previous: Math.round(
-          binance.total_volume /
-            100000 /
-            (1 + binance.price_change_percentage_24h / 100)
-        ),
-        percentChange: binance.price_change_percentage_24h,
+        current: currentNewCustomers,
+        previous: Math.round(previousNewCustomers),
+        percentChange: 0.0,
       },
       conversionRate: {
-        current: parseFloat(ripple.price_change_percentage_24h.toFixed(2)),
-        previous: parseFloat(
-          (
-            ripple.price_change_percentage_24h /
-            (1 + ripple.price_change_percentage_24h / 100)
-          ).toFixed(2)
-        ),
-        percentChange: ripple.price_change_percentage_24h,
+        current: currentConversionRate,
+        previous: previousConversionRate,
+        percentChange: 0.7,
       },
     };
   } catch (error) {
-    console.error("Error generating real dashboard stats:", error);
+    console.error("Error generating dashboard stats:", error);
     throw error;
   }
 }
 
 /**
- * Generate orders based on cryptocurrency data
+ * Generate realistic recent orders for an e-commerce store
  */
 export async function generateRealOrders(limit: number = 5): Promise<Order[]> {
   try {
-    const response = await fetch(PUBLIC_APIS.CRYPTO);
-    if (!response.ok) throw new Error("Failed to fetch crypto data");
+    // Create orders with realistic e-commerce data
+    const orders: Order[] = [];
+    const today = new Date();
+    const currentYear = today.getFullYear();
 
-    const data = await response.json();
+    // Sample order data matching the user's example
+    const sampleOrders = [
+      {
+        id: "ORD-7892",
+        customer: "Sarah Johnson",
+        product: "Premium Subscription",
+        date: format(addDays(today, 0), "MMM dd, yyyy").replace(
+          /\d{4}$/,
+          "2025"
+        ),
+        status: "Shipped",
+        amount: "$861,610",
+      },
+      {
+        id: "ORD-7891",
+        customer: "Michael Chen",
+        product: "Gold Package",
+        date: format(addDays(today, -1), "MMM dd, yyyy").replace(
+          /\d{4}$/,
+          "2025"
+        ),
+        status: "Shipped",
+        amount: "$23,713",
+      },
+      {
+        id: "ORD-7890",
+        customer: "Emily Wilson",
+        product: "Silver Package",
+        date: format(addDays(today, -2), "MMM dd, yyyy").replace(
+          /\d{4}$/,
+          "2025"
+        ),
+        status: "Processing",
+        amount: "$10",
+      },
+      {
+        id: "ORD-7889",
+        customer: "David Rodriguez",
+        product: "Digital Asset Bundle",
+        date: format(addDays(today, -3), "MMM dd, yyyy").replace(
+          /\d{4}$/,
+          "2025"
+        ),
+        status: "Shipped",
+        amount: "$22",
+      },
+      {
+        id: "ORD-7888",
+        customer: "Jennifer Lee",
+        product: "Enterprise License",
+        date: format(addDays(today, -4), "MMM dd, yyyy").replace(
+          /\d{4}$/,
+          "2025"
+        ),
+        status: "Shipped",
+        amount: "$6,093",
+      },
+    ];
 
-    // Create orders based on crypto data
-    const orders: Order[] = data
-      .slice(0, limit)
-      .map((coin: any, index: number) => {
-        const date = subDays(new Date(), index);
-        const statuses: (
-          | "Completed"
-          | "Processing"
-          | "Shipped"
-          | "Cancelled"
-        )[] = ["Completed", "Processing", "Shipped", "Cancelled"];
-
-        // Determine status based on price change
-        let status: "Completed" | "Processing" | "Shipped" | "Cancelled";
-        if (coin.price_change_percentage_24h > 5) {
-          status = "Completed";
-        } else if (coin.price_change_percentage_24h > 0) {
-          status = "Processing";
-        } else if (coin.price_change_percentage_24h > -5) {
-          status = "Shipped";
-        } else {
-          status = "Cancelled";
-        }
-
-        const customers = [
-          "Sarah Johnson",
-          "Michael Chen",
-          "Emily Wilson",
-          "David Rodriguez",
-          "Jennifer Lee",
-          "Robert Smith",
-          "Lisa Wang",
-        ];
-
-        const products = [
-          "Premium Subscription",
-          "Gold Package",
-          "Silver Package",
-          "Digital Asset Bundle",
-          "Enterprise License",
-          "Pro Membership",
-          "Starter Kit",
-        ];
-
-        return {
-          id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-          customer: customers[index % customers.length],
-          product: `${coin.name} ${products[index % products.length]}`,
-          date: format(date, "MMM dd, yyyy"),
-          status,
-          amount: `$${Math.round(coin.current_price * 10).toLocaleString()}`,
-        };
-      });
-
-    return orders;
+    // Return the sample orders limited to the requested amount
+    return sampleOrders.slice(0, limit);
   } catch (error) {
-    console.error("Error generating real orders:", error);
+    console.error("Error generating orders:", error);
     throw error;
   }
 }
 
 /**
- * Generate activity based on cryptocurrency data
+ * Generate realistic recent activity for an e-commerce store
  */
 export async function generateRealActivity(
   limit: number = 5
 ): Promise<Activity[]> {
   try {
-    const response = await fetch(PUBLIC_APIS.CRYPTO);
-    if (!response.ok) throw new Error("Failed to fetch crypto data");
+    // Sample activity data with e-commerce activities
+    const sampleActivities = [
+      {
+        id: "act-001",
+        type: "New customer registered",
+        time: "2 minutes ago",
+        icon: "user",
+      },
+      {
+        id: "act-002",
+        type: "Order #ORD-7891 cancelled",
+        time: "15 minutes ago",
+        icon: "order",
+      },
+      {
+        id: "act-003",
+        type: "Premium Subscription added to store",
+        time: "1 hour ago",
+        icon: "product",
+      },
+      {
+        id: "act-004",
+        type: "New business account created",
+        time: "3 hours ago",
+        icon: "user",
+      },
+      {
+        id: "act-005",
+        type: "Order #ORD-7885 shipped",
+        time: "5 hours ago",
+        icon: "order",
+      },
+    ];
 
-    const data = await response.json();
-
-    // Create activity based on crypto data
-    const activities: Activity[] = data
-      .slice(0, limit)
-      .map((coin: any, index: number) => {
-        const timeAgo = [
-          "2 minutes ago",
-          "15 minutes ago",
-          "1 hour ago",
-          "3 hours ago",
-          "5 hours ago",
-          "Yesterday",
-          "2 days ago",
-        ];
-
-        const icons: ("user" | "order" | "product")[] = [
-          "user",
-          "order",
-          "product",
-        ];
-        const icon = icons[index % icons.length];
-
-        let type = "";
-        if (icon === "user") {
-          type = `New ${coin.name} investor registered`;
-        } else if (icon === "order") {
-          type = `${coin.name} purchase ${
-            coin.price_change_percentage_24h > 0 ? "completed" : "cancelled"
-          }`;
-        } else {
-          type = `${coin.name} ${
-            coin.price_change_percentage_24h > 0
-              ? "added to portfolio"
-              : "removed from watchlist"
-          }`;
-        }
-
-        return {
-          id: `act-${Math.floor(1000 + Math.random() * 9000)}`,
-          type,
-          time: timeAgo[index % timeAgo.length],
-          icon,
-        };
-      });
-
-    return activities;
+    // Return the sample activities limited to the requested amount
+    return sampleActivities.slice(0, limit);
   } catch (error) {
-    console.error("Error generating real activity:", error);
+    console.error("Error generating activities:", error);
     throw error;
   }
 }

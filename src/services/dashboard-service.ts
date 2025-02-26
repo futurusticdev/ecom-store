@@ -1,7 +1,7 @@
 import { format, subDays } from "date-fns";
 import { fetchWithFallback, fetchWithCache } from "@/lib/data-utils";
 import {
-  fetchCryptoData,
+  fetchSalesData,
   generateRealDashboardStats,
   generateRealOrders,
   generateRealActivity,
@@ -127,41 +127,68 @@ function generateMockSalesData(
   }));
 }
 
-// Public API
+// Public API - prioritize real data
 export async function getDashboardStats(): Promise<DashboardStats> {
-  return await fetchWithFallback<DashboardStats>(
-    API_ENDPOINTS.STATS,
-    async () => await generateRealDashboardStats(),
-    generateMockDashboardStats
-  );
+  // Always return real data for the dashboard stats
+  try {
+    return await generateRealDashboardStats();
+  } catch (error) {
+    console.error("Error fetching real dashboard stats:", error);
+    // Fall back to mock data only if real data fails
+    return await fetchWithFallback<DashboardStats>(
+      API_ENDPOINTS.STATS,
+      generateRealDashboardStats,
+      generateMockDashboardStats
+    );
+  }
 }
 
 export async function getRecentOrders(limit: number = 5): Promise<Order[]> {
-  return await fetchWithFallback<Order[]>(
-    `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`,
-    async () => await generateRealOrders(limit),
-    () => generateMockRecentOrders(limit)
-  );
+  // Always return real orders
+  try {
+    return await generateRealOrders(limit);
+  } catch (error) {
+    console.error("Error fetching real orders:", error);
+    // Fall back to mock data only if real data fails
+    return await fetchWithFallback<Order[]>(
+      `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`,
+      () => generateRealOrders(limit),
+      () => generateMockRecentOrders(limit)
+    );
+  }
 }
 
 export async function getRecentActivity(
   limit: number = 5
 ): Promise<Activity[]> {
-  return await fetchWithFallback<Activity[]>(
-    `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`,
-    async () => await generateRealActivity(limit),
-    () => generateMockRecentActivity(limit)
-  );
+  // Always return real activity
+  try {
+    return await generateRealActivity(limit);
+  } catch (error) {
+    console.error("Error fetching real activity:", error);
+    // Fall back to mock data only if real data fails
+    return await fetchWithFallback<Activity[]>(
+      `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`,
+      () => generateRealActivity(limit),
+      () => generateMockRecentActivity(limit)
+    );
+  }
 }
 
 export async function getSalesData(
   days: number = 7
 ): Promise<{ date: string; sales: number }[]> {
-  return await fetchWithCache<{ date: string; sales: number }[]>(
-    `${API_ENDPOINTS.SALES_DATA}?days=${days}`,
-    "sales_data",
-    async () => await fetchCryptoData(days),
-    () => generateMockSalesData(days),
-    60 * 60 * 1000 // 1 hour cache
-  );
+  // Always return real sales data
+  try {
+    return await fetchSalesData(days);
+  } catch (error) {
+    console.error("Error fetching real sales data:", error);
+    // Fall back to cached or mock data only if real data fails
+    return await fetchWithCache<{ date: string; sales: number }[]>(
+      `${API_ENDPOINTS.SALES_DATA}?days=${days}`,
+      `sales_data_${days}`,
+      () => fetchSalesData(days),
+      () => generateMockSalesData(days)
+    );
+  }
 }

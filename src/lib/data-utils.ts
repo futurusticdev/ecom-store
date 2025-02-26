@@ -5,12 +5,14 @@
 /**
  * Attempts to fetch data from an API endpoint with a fallback to mock data
  * @param apiUrl The API endpoint to fetch data from
+ * @param realDataFn Function that returns real data
  * @param mockDataFn Function that returns mock data
  * @param timeout Timeout in milliseconds before falling back to mock data
  */
 export async function fetchWithFallback<T>(
   apiUrl: string,
-  mockDataFn: () => Promise<T>,
+  realDataFn: () => Promise<T>,
+  mockDataFn: () => T,
   timeout: number = 3000
 ): Promise<T> {
   // Create a promise that rejects after the timeout
@@ -19,16 +21,17 @@ export async function fetchWithFallback<T>(
   });
 
   try {
-    // Try to fetch real data from the API
+    // Try to fetch real data from the API or use the provided real data function
     const response = await Promise.race([
       fetch(apiUrl).then((res) => {
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         return res.json();
       }),
+      realDataFn(),
       timeoutPromise,
     ]);
 
-    console.log("Using real data from API");
+    console.log("Using real data");
     return response as T;
   } catch (error) {
     // If API fetch fails, log and use mock data
@@ -36,7 +39,7 @@ export async function fetchWithFallback<T>(
       "Using mock data:",
       error instanceof Error ? error.message : "Unknown error"
     );
-    return await mockDataFn();
+    return mockDataFn();
   }
 }
 
@@ -72,10 +75,17 @@ export function getWithExpiry<T>(key: string): T | null {
 
 /**
  * Fetches data with caching in localStorage
+ * @param apiUrl The API endpoint to fetch data from
+ * @param cacheKey The key to use for caching
+ * @param realDataFn Function that returns real data
+ * @param mockDataFn Function that returns mock data
+ * @param ttl Time to live for the cache in milliseconds
  */
 export async function fetchWithCache<T>(
+  apiUrl: string,
   cacheKey: string,
-  fetchFn: () => Promise<T>,
+  realDataFn: () => Promise<T>,
+  mockDataFn: () => T,
   ttl: number = 5 * 60 * 1000 // 5 minutes default
 ): Promise<T> {
   // Try to get from cache first
@@ -86,8 +96,8 @@ export async function fetchWithCache<T>(
     return cachedData;
   }
 
-  // If not in cache, fetch fresh data
-  const freshData = await fetchFn();
+  // If not in cache, fetch fresh data using fetchWithFallback
+  const freshData = await fetchWithFallback<T>(apiUrl, realDataFn, mockDataFn);
 
   // Store in cache
   storeWithExpiry(cacheKey, freshData, ttl);
