@@ -9,11 +9,11 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(categories);
+    return NextResponse.json({ categories });
   } catch (error) {
     console.error("[CATEGORIES_GET]", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { error: "Internal Server Error", categories: [] },
       { status: 500 }
     );
   }

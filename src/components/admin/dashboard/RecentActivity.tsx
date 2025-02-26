@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -26,6 +26,50 @@ export function RecentActivity() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Wrap formatTimeAgo in useCallback to memoize it
+  const formatTimeAgo = useCallback(
+    (date: Date | string) => {
+      try {
+        // Handle different date formats
+        let dateObj: Date;
+
+        if (typeof date === "string") {
+          // If it's an ISO string, parse it
+          dateObj = parseISO(date);
+        } else if (date instanceof Date) {
+          // If it's already a Date object, use it directly
+          dateObj = date;
+        } else {
+          // If it's neither, create a new Date object
+          console.warn("Invalid date format:", date);
+          dateObj = new Date();
+        }
+
+        // Check if the date is valid
+        if (isNaN(dateObj.getTime())) {
+          console.warn("Invalid date:", date);
+          return "recently";
+        }
+
+        // Use currentTime in a way that doesn't affect the result but makes
+        // React aware that this function depends on currentTime
+        const timeDiff = currentTime.getTime() - dateObj.getTime();
+        if (timeDiff < 0) {
+          console.warn("Future date detected:", date);
+        }
+
+        // Format the date using currentTime as the reference time
+        return formatDistance(dateObj, currentTime, {
+          addSuffix: true,
+        });
+      } catch (error) {
+        console.error("Error formatting date:", error, date);
+        return "recently";
+      }
+    },
+    [currentTime]
+  ); // Add currentTime as a dependency since the function uses it
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -84,7 +128,7 @@ export function RecentActivity() {
       clearInterval(dataIntervalId);
       clearInterval(timeIntervalId);
     };
-  }, []);
+  }, [formatTimeAgo]);
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -100,46 +144,6 @@ export function RecentActivity() {
         return <Users className="h-5 w-5 text-indigo-500" />;
       default:
         return <Settings className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const formatTimeAgo = (date: Date | string) => {
-    try {
-      // Handle different date formats
-      let dateObj: Date;
-
-      if (typeof date === "string") {
-        // If it's an ISO string, parse it
-        dateObj = parseISO(date);
-      } else if (date instanceof Date) {
-        // If it's already a Date object, use it directly
-        dateObj = date;
-      } else {
-        // If it's neither, create a new Date object
-        console.warn("Invalid date format:", date);
-        dateObj = new Date();
-      }
-
-      // Check if the date is valid
-      if (isNaN(dateObj.getTime())) {
-        console.warn("Invalid date:", date);
-        return "recently";
-      }
-
-      // Use currentTime in a way that doesn't affect the result but makes
-      // React aware that this function depends on currentTime
-      const timeDiff = currentTime.getTime() - dateObj.getTime();
-      if (timeDiff < 0) {
-        console.warn("Future date detected:", date);
-      }
-
-      // Format the date using currentTime as the reference time
-      return formatDistance(dateObj, currentTime, {
-        addSuffix: true,
-      });
-    } catch (error) {
-      console.error("Error formatting date:", error, date);
-      return "recently";
     }
   };
 

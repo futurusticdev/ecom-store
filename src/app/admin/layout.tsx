@@ -107,6 +107,15 @@ export default function AdminLayout({
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="absolute top-8 left-0 w-full text-center">
+          <Link
+            href="/"
+            className="inline-block text-3xl font-extrabold tracking-tight hover:text-indigo-600 transition-colors"
+            title="Return to Homepage"
+          >
+            LUXE
+          </Link>
+        </div>
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <div className="flex items-center justify-center mb-4">
@@ -161,7 +170,21 @@ export default function AdminLayout({
         )}
       >
         <div className="flex items-center justify-between px-4 py-5 border-b">
-          <h1 className="text-xl font-bold">LUXE</h1>
+          <h1 className="text-xl font-bold flex items-center">
+            <Link
+              href="/"
+              prefetch={false}
+              className="hover:text-indigo-600 transition-colors"
+              title="Go to Homepage"
+              onClick={() => {
+                // Force navigation to homepage
+                window.location.href = "/";
+              }}
+            >
+              LUXE
+            </Link>
+            <span className="ml-1 text-xs text-gray-500">Admin</span>
+          </h1>
           <button
             onClick={() => setSidebarOpen(false)}
             className="p-2 rounded-md text-gray-500 hover:text-gray-900 focus:outline-none"
@@ -207,7 +230,21 @@ export default function AdminLayout({
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-col md:w-64 md:bg-white md:border-r">
         <div className="flex items-center flex-shrink-0 px-6 py-5 border-b">
-          <h1 className="text-2xl font-bold tracking-tight">LUXE</h1>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center">
+            <Link
+              href="/"
+              prefetch={false}
+              className="hover:text-indigo-600 transition-colors"
+              title="Go to Homepage"
+              onClick={() => {
+                // Force navigation to homepage
+                window.location.href = "/";
+              }}
+            >
+              LUXE
+            </Link>
+            <span className="ml-2 text-sm text-gray-500">Admin</span>
+          </h1>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1">
           {navigation.map((item) => {

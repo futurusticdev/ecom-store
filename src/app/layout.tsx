@@ -10,6 +10,7 @@ import { CartSidebar } from "@/components/cart/cart-sidebar";
 import { WishlistSidebar } from "@/components/product/wishlist-sidebar";
 import { AuthProvider } from "@/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { ToastContextProvider } from "@/components/ui/toast-context";
 import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,20 +27,22 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              {!isAdminPage && <Header />}
-              <main>{children}</main>
-              {!isAdminPage && <Footer />}
-              {!isAdminPage && (
-                <>
-                  <CartSidebar />
-                  <WishlistSidebar />
-                </>
-              )}
-              <Toaster />
-            </WishlistProvider>
-          </CartProvider>
+          <ToastContextProvider>
+            <CartProvider>
+              <WishlistProvider>
+                {!isAdminPage && <Header />}
+                <main>{children}</main>
+                {!isAdminPage && <Footer />}
+                {!isAdminPage && (
+                  <>
+                    <CartSidebar />
+                    <WishlistSidebar />
+                  </>
+                )}
+                <Toaster />
+              </WishlistProvider>
+            </CartProvider>
+          </ToastContextProvider>
         </AuthProvider>
       </body>
     </html>

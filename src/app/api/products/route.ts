@@ -25,11 +25,15 @@ export async function GET(request: Request) {
     const minPrice = Number(searchParams.get("minPrice")) || undefined;
     const maxPrice = Number(searchParams.get("maxPrice")) || undefined;
     const sort = searchParams.get("sort") || "createdAt.desc";
+    const inStockParam = searchParams.get("inStock");
 
     // Build where clause
-    const where: Prisma.ProductWhereInput = {
-      inStock: true,
-    };
+    const where: Prisma.ProductWhereInput = {};
+
+    // Add inStock filter if provided
+    if (inStockParam !== null) {
+      where.inStock = inStockParam === "true";
+    }
 
     // Add search filter
     if (search) {
