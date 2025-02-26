@@ -128,6 +128,9 @@ export default function AdminLayout({
                 onKeyDown={handleKeyDown}
               />
               {error && <p className="text-sm text-red-500">{error}</p>}
+              <p className="text-sm text-muted-foreground mt-2">
+                Password is <span className="font-medium">admin123</span>
+              </p>
             </div>
           </CardContent>
           <CardFooter>
