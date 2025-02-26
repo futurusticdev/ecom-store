@@ -168,7 +168,11 @@ export default function AdminLayout({
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === "/admin"
+                ? pathname === "/admin" // Exact match for dashboard
+                : pathname?.startsWith(item.href); // Prefix match for other items
+
             return (
               <Link
                 key={item.name}
@@ -199,21 +203,25 @@ export default function AdminLayout({
 
       {/* Desktop sidebar */}
       <div className="hidden md:flex md:flex-col md:w-64 md:bg-white md:border-r">
-        <div className="flex items-center flex-shrink-0 px-4 py-5">
-          <h1 className="text-xl font-bold">LUXE</h1>
+        <div className="flex items-center flex-shrink-0 px-6 py-5 border-b">
+          <h1 className="text-2xl font-bold tracking-tight">LUXE</h1>
         </div>
-        <nav className="flex-1 px-4 py-4 space-y-2">
+        <nav className="flex-1 px-4 py-4 space-y-1">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              item.href === "/admin"
+                ? pathname === "/admin" // Exact match for dashboard
+                : pathname?.startsWith(item.href); // Prefix match for other items
+
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex items-center px-3 py-3 text-sm font-medium rounded-md transition-colors",
+                  "flex items-center px-3 py-2 rounded-md transition-colors",
                   isActive
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                 )}
                 title={item.name}
               >
@@ -221,7 +229,7 @@ export default function AdminLayout({
                   className={cn(
                     "mr-3 flex-shrink-0 h-5 w-5",
                     isActive
-                      ? "text-primary"
+                      ? "text-indigo-600"
                       : "text-gray-400 group-hover:text-gray-500"
                   )}
                   aria-hidden="true"

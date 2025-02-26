@@ -2,37 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Loader2,
-  ArrowLeft,
-  Trash2,
-  RefreshCw,
-  Plus,
-  Filter,
-  Download,
-  Edit,
-} from "lucide-react";
+import { Edit, Plus, Download, Trash } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -42,446 +14,550 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format, addDays } from "date-fns";
-
-// Define discount type
-type Discount = {
-  id: string;
-  code: string;
-  type: "PERCENTAGE" | "FIXED" | "SHIPPING";
-  value: number;
-  usage: {
-    current: number;
-    max: number;
-  };
-  startDate: string;
-  endDate: string;
-  status: "Active" | "Inactive" | "Ending Soon" | "Scheduled";
-  createdAt: string;
-  updatedAt: string;
-};
+import { format } from "date-fns";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Discount } from "@/types/discount";
+import {
+  getDiscounts,
+  toggleDiscountStatus,
+  deleteDiscount,
+  getDiscountStatistics,
+} from "@/services/discount-service";
+import {
+  formatDiscountValue,
+  filterDiscounts,
+  exportDiscountsAsCSV,
+} from "@/lib/discount-utils";
 
 export default function AdminDiscountsPage() {
-  // State for creating a discount
-  const [loading, setLoading] = useState(false);
-  const [discountCode, setDiscountCode] = useState("");
-  const [discountType, setDiscountType] = useState<
-    "PERCENTAGE" | "FIXED" | "SHIPPING"
-  >("PERCENTAGE");
-  const [discountValue, setDiscountValue] = useState(10);
-  const [minPurchase, setMinPurchase] = useState(0);
-  const [maxUses, setMaxUses] = useState(100);
-  const [expiryDate, setExpiryDate] = useState("");
-  const [isActive, setIsActive] = useState(true);
-  const [productCategory, setProductCategory] = useState("all");
-
   // State for managing discounts
+  const [loading, setLoading] = useState(true);
   const [activeDiscounts, setActiveDiscounts] = useState<Discount[]>([]);
   const [scheduledDiscounts, setScheduledDiscounts] = useState<Discount[]>([]);
-  const [loadingDiscounts, setLoadingDiscounts] = useState(false);
   const [stats, setStats] = useState({
-    activeDiscounts: 24,
-    endingThisWeek: 8,
-    totalSavings: 12450,
-    appliedToOrders: 1245,
-    usageRate: 68,
-    comparedToLastMonth: 64.8,
-    scheduledDiscounts: 12,
-    startingNextWeek: 5,
+    endingThisWeek: 0,
+    appliedToOrders: 0,
+    usageRate: 0,
+    comparedToLastMonth: 0,
+    totalSavings: 0,
   });
+
+  // State for filtering
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType] = useState<"all" | "PERCENTAGE" | "FIXED">("all");
+
+  // State for delete confirmation
+  const [deleteDiscountId, setDeleteDiscountId] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Fetch discounts on page load
   useEffect(() => {
-    // This would normally fetch from API
-    // For demo purposes, we're creating sample data
-    const now = new Date();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
 
-    const sampleActiveDiscounts: Discount[] = [
-      {
-        id: "1",
-        code: "SPRING25",
-        type: "PERCENTAGE",
-        value: 25,
-        usage: {
-          current: 245,
-          max: 500,
-        },
-        startDate: format(now, "MMM d, yyyy"),
-        endDate: format(addDays(now, 30), "MMM d, yyyy"),
-        status: "Active",
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: "2",
-        code: "WELCOME50",
-        type: "FIXED",
-        value: 50,
-        usage: {
-          current: 89,
-          max: 100,
-        },
-        startDate: format(addDays(now, 10), "MMM d, yyyy"),
-        endDate: format(addDays(now, 20), "MMM d, yyyy"),
-        status: "Active",
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: "3",
-        code: "FREESHIP",
-        type: "SHIPPING",
-        value: 100,
-        usage: {
-          current: 156,
-          max: 200,
-        },
-        startDate: format(addDays(now, 5), "MMM d, yyyy"),
-        endDate: format(addDays(now, 25), "MMM d, yyyy"),
-        status: "Ending Soon",
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-    ];
+        // Fetch discounts and stats
+        const [discountData, statsData] = await Promise.all([
+          getDiscounts(),
+          getDiscountStatistics(),
+        ]);
 
-    const sampleScheduledDiscounts: Discount[] = [
-      {
-        id: "4",
-        code: "SUMMER30",
-        type: "PERCENTAGE",
-        value: 30,
-        usage: {
-          current: 0,
-          max: 1000,
-        },
-        startDate: format(addDays(now, 35), "MMM d, yyyy"),
-        endDate: format(addDays(now, 65), "MMM d, yyyy"),
-        status: "Scheduled",
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-      {
-        id: "5",
-        code: "FLASH75",
-        type: "PERCENTAGE",
-        value: 75,
-        usage: {
-          current: 0,
-          max: 500,
-        },
-        startDate: format(addDays(now, 25), "MMM d, yyyy"),
-        endDate: format(addDays(now, 26), "MMM d, yyyy"),
-        status: "Scheduled",
-        createdAt: now.toISOString(),
-        updatedAt: now.toISOString(),
-      },
-    ];
+        setActiveDiscounts(discountData.activeDiscounts);
+        setScheduledDiscounts(discountData.scheduledDiscounts);
+        setStats(statsData);
+      } catch (error) {
+        console.error("Error fetching discounts:", error);
+        toast.error("Failed to load discounts");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setActiveDiscounts(sampleActiveDiscounts);
-    setScheduledDiscounts(sampleScheduledDiscounts);
+    fetchData();
   }, []);
 
-  // Create a new discount
-  const createDiscount = async () => {
-    if (!discountCode) {
-      toast.error("Please enter a discount code");
-      return;
-    }
-
+  // Handle toggling discount status
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleToggleStatus = async (id: string, isActive: boolean) => {
     try {
-      setLoading(true);
+      const success = await toggleDiscountStatus(id, isActive);
 
-      const response = await fetch("/api/discounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: discountCode,
-          type: discountType,
-          value: discountValue,
-          minPurchase,
-          maxUses,
-          expiryDate: expiryDate || null,
-          isActive,
-          productCategory: productCategory === "all" ? null : productCategory,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create discount");
+      if (success) {
+        if (isActive) {
+          // Activate discount (move from scheduled to active)
+          const discountToActivate = scheduledDiscounts.find(
+            (d) => d.id === id
+          );
+          if (discountToActivate) {
+            const updatedDiscount: Discount = {
+              ...discountToActivate,
+              status: "Active",
+              updatedAt: new Date().toISOString(),
+            };
+            setScheduledDiscounts((prev) => prev.filter((d) => d.id !== id));
+            setActiveDiscounts((prev) => [...prev, updatedDiscount]);
+            toast.success(`Discount ${discountToActivate.code} activated`);
+          }
+        } else {
+          // Deactivate discount (move from active to scheduled)
+          const discountToDeactivate = activeDiscounts.find((d) => d.id === id);
+          if (discountToDeactivate) {
+            const updatedDiscount: Discount = {
+              ...discountToDeactivate,
+              status: "Scheduled",
+              updatedAt: new Date().toISOString(),
+            };
+            setActiveDiscounts((prev) => prev.filter((d) => d.id !== id));
+            setScheduledDiscounts((prev) => [...prev, updatedDiscount]);
+            toast.success(`Discount ${discountToDeactivate.code} deactivated`);
+          }
+        }
       }
-
-      await response.json();
-
-      toast.success(`Successfully created discount code: ${discountCode}`);
-
-      // Reset form
-      setDiscountCode("");
-      setDiscountType("PERCENTAGE");
-      setDiscountValue(10);
-      setMinPurchase(0);
-      setMaxUses(100);
-      setExpiryDate("");
-      setIsActive(true);
-      setProductCategory("all");
-
-      // Refresh discounts list
-      fetchDiscounts();
-
-      setLoading(false);
     } catch (error) {
-      console.error("Error creating discount:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create discount"
-      );
-      setLoading(false);
+      console.error("Error toggling discount status:", error);
+      toast.error("Failed to update discount status");
     }
   };
 
-  // Delete a discount
-  const deleteDiscount = async (id: string) => {
-    toast.success("Discount deleted successfully");
-    // In a real app, you would call an API to delete the discount
-  };
+  // Handle discount deletion
+  const handleDeleteDiscount = async (id: string) => {
+    try {
+      const success = await deleteDiscount(id);
 
-  // Format discount value for display
-  const formatDiscountValue = (discount: Discount) => {
-    switch (discount.type) {
-      case "PERCENTAGE":
-        return `${discount.value}%`;
-      case "FIXED":
-        return `$${discount.value}`;
-      case "SHIPPING":
-        return `100%`;
-      default:
-        return discount.value.toString();
+      if (success) {
+        // Remove from active discounts
+        const activeDiscount = activeDiscounts.find((d) => d.id === id);
+        if (activeDiscount) {
+          setActiveDiscounts((prev) => prev.filter((d) => d.id !== id));
+          toast.success(`Discount ${activeDiscount.code} deleted`);
+          return;
+        }
+
+        // Remove from scheduled discounts
+        const scheduledDiscount = scheduledDiscounts.find((d) => d.id === id);
+        if (scheduledDiscount) {
+          setScheduledDiscounts((prev) => prev.filter((d) => d.id !== id));
+          toast.success(`Discount ${scheduledDiscount.code} deleted`);
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting discount:", error);
+      toast.error("Failed to delete discount");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setDeleteDiscountId(null);
     }
   };
+
+  // Handle export discounts
+  const handleExportDiscounts = () => {
+    try {
+      const allDiscounts = [...activeDiscounts, ...scheduledDiscounts];
+      const csv = exportDiscountsAsCSV(allDiscounts);
+
+      // Create download link
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `discounts-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Discounts exported successfully");
+    } catch (error) {
+      console.error("Error exporting discounts:", error);
+      toast.error("Failed to export discounts");
+    }
+  };
+
+  // Filter active discounts based on search query and filter type
+  const filteredActiveDiscounts = filterDiscounts(
+    activeDiscounts,
+    searchQuery,
+    filterType
+  );
 
   return (
-    <div className="py-8 px-6">
-      {/* Statistics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Active Discounts */}
-        <Card>
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-500">Active Discounts</h3>
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                  Live
-                </Badge>
-              </div>
-              <div className="mb-1">
-                <h2 className="text-2xl font-bold">{stats.activeDiscounts}</h2>
-              </div>
-              <p className="text-xs text-gray-500">
-                {stats.endingThisWeek} ending this week
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        {/* Search Box */}
+        <div className="relative w-1/3">
+          <input
+            type="text"
+            placeholder="Search discounts..."
+            className="w-full px-4 py-2 pl-10 border rounded-lg"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <svg
+            className="absolute left-3 top-3 h-4 w-4 text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
 
-        {/* Total Savings */}
-        <Card>
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-500">Total Savings</h3>
-                <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-                  This Month
-                </Badge>
-              </div>
-              <div className="mb-1">
-                <h2 className="text-2xl font-bold">
-                  ${stats.totalSavings.toLocaleString()}
-                </h2>
-              </div>
-              <p className="text-xs text-gray-500">
-                Applied to {stats.appliedToOrders.toLocaleString()} orders
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Usage Rate */}
-        <Card>
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-500">Usage Rate</h3>
-                <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-                  +5.2%
-                </Badge>
-              </div>
-              <div className="mb-1">
-                <h2 className="text-2xl font-bold">{stats.usageRate}%</h2>
-              </div>
-              <p className="text-xs text-gray-500">
-                Compared to {stats.comparedToLastMonth}% last month
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Scheduled */}
-        <Card>
-          <CardContent className="p-6">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-gray-500">Scheduled</h3>
-                <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
-                  Upcoming
-                </Badge>
-              </div>
-              <div className="mb-1">
-                <h2 className="text-2xl font-bold">
-                  {stats.scheduledDiscounts}
-                </h2>
-              </div>
-              <p className="text-xs text-gray-500">Starting next week</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Button Group */}
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={handleExportDiscounts}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+          <Link href="/admin/discounts/new">
+            <Button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="h-4 w-4" />
+              New Discount
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Active Discounts Section */}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Active Discounts */}
+        <div className="bg-white rounded-lg p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm text-gray-500">Active Discounts</h3>
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 font-normal">
+              Live
+            </Badge>
+          </div>
+          <div className="mb-1">
+            <h2 className="text-2xl font-bold">{activeDiscounts.length}</h2>
+          </div>
+          <p className="text-xs text-gray-500">
+            {stats.endingThisWeek} ending this week
+          </p>
+        </div>
+
+        {/* Total Savings */}
+        <div className="bg-white rounded-lg p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm text-gray-500">Total Savings</h3>
+            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 font-normal">
+              This Month
+            </Badge>
+          </div>
+          <div className="mb-1">
+            <h2 className="text-2xl font-bold">
+              $
+              {stats.totalSavings.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </h2>
+          </div>
+          <p className="text-xs text-gray-500">
+            Applied to {stats.appliedToOrders.toLocaleString()} orders
+          </p>
+        </div>
+
+        {/* Usage Rate */}
+        <div className="bg-white rounded-lg p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm text-gray-500">Usage Rate</h3>
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 font-normal">
+              +{(stats.usageRate - stats.comparedToLastMonth).toFixed(1)}%
+            </Badge>
+          </div>
+          <div className="mb-1">
+            <h2 className="text-2xl font-bold">{stats.usageRate}%</h2>
+          </div>
+          <p className="text-xs text-gray-500">
+            Compared to {stats.comparedToLastMonth.toFixed(1)}% last month
+          </p>
+        </div>
+
+        {/* Scheduled */}
+        <div className="bg-white rounded-lg p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm text-gray-500">Scheduled</h3>
+            <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 font-normal">
+              Upcoming
+            </Badge>
+          </div>
+          <div className="mb-1">
+            <h2 className="text-2xl font-bold">{scheduledDiscounts.length}</h2>
+          </div>
+          <p className="text-xs text-gray-500">Starting next week</p>
+        </div>
+      </div>
+
+      {/* Active Discounts Table */}
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Active Discounts</h2>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" className="flex items-center">
-              <Filter className="h-4 w-4 mr-1" />
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium">Active Discounts</h2>
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              className="flex items-center text-sm text-gray-600 font-medium"
+              onClick={() => {}}
+            >
+              <svg
+                className="h-4 w-4 mr-1"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                />
+              </svg>
               Filter
             </Button>
-            <Button variant="outline" size="sm" className="flex items-center">
+            <Button
+              variant="ghost"
+              className="flex items-center text-sm text-gray-600 font-medium"
+              onClick={handleExportDiscounts}
+            >
               <Download className="h-4 w-4 mr-1" />
               Export
             </Button>
-            <Link href="/admin/discounts/new">
-              <Button size="sm" className="flex items-center">
-                <Plus className="h-4 w-4 mr-1" />
-                New Discount
-              </Button>
-            </Link>
           </div>
         </div>
-
-        <div className="bg-white rounded-md shadow">
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-gray-50 text-xs uppercase">
               <TableRow>
-                <TableHead className="w-[150px]">CODE</TableHead>
-                <TableHead>TYPE</TableHead>
-                <TableHead>VALUE</TableHead>
-                <TableHead>USAGE</TableHead>
-                <TableHead>START DATE</TableHead>
-                <TableHead>END DATE</TableHead>
-                <TableHead>STATUS</TableHead>
-                <TableHead className="text-right">ACTIONS</TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  CODE
+                </TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  TYPE
+                </TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  VALUE
+                </TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  USAGE
+                </TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  START DATE
+                </TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  END DATE
+                </TableHead>
+                <TableHead className="font-medium text-gray-500">
+                  STATUS
+                </TableHead>
+                <TableHead className="font-medium text-gray-500 text-right">
+                  ACTIONS
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activeDiscounts.map((discount) => (
-                <TableRow key={discount.id}>
-                  <TableCell className="font-medium">{discount.code}</TableCell>
-                  <TableCell>
-                    {discount.type === "PERCENTAGE"
-                      ? "Percentage"
-                      : discount.type === "FIXED"
-                      ? "Fixed Amount"
-                      : "Free Shipping"}
-                  </TableCell>
-                  <TableCell>{formatDiscountValue(discount)}</TableCell>
-                  <TableCell>
-                    {discount.usage.current}/{discount.usage.max}
-                  </TableCell>
-                  <TableCell>{discount.startDate}</TableCell>
-                  <TableCell>{discount.endDate}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        discount.status === "Active"
-                          ? "bg-green-100 text-green-800"
-                          : discount.status === "Ending Soon"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : "bg-gray-100 text-gray-800"
-                      }
-                    >
-                      {discount.status === "Ending Soon"
-                        ? "Ending Soon"
-                        : "Active"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="ghost" size="icon" title="Edit">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Delete"
-                        onClick={() => deleteDiscount(discount.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <div className="flex justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                    </div>
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      Loading discounts...
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredActiveDiscounts.length > 0 ? (
+                filteredActiveDiscounts.map((discount) => (
+                  <TableRow key={discount.id}>
+                    <TableCell className="font-medium">
+                      {discount.code}
+                    </TableCell>
+                    <TableCell>
+                      {discount.type === "PERCENTAGE"
+                        ? "Percentage"
+                        : discount.type === "FIXED"
+                        ? "Fixed Amount"
+                        : "Free Shipping"}
+                    </TableCell>
+                    <TableCell>{formatDiscountValue(discount)}</TableCell>
+                    <TableCell>
+                      {discount.usage.current}/{discount.usage.max}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(discount.startDate), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      {format(new Date(discount.endDate), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`font-normal ${
+                          discount.status === "Active"
+                            ? "bg-green-100 text-green-800"
+                            : discount.status === "Ending Soon"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {discount.status === "Ending Soon"
+                          ? "Ending Soon"
+                          : "Active"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end space-x-2">
+                        <Link href={`/admin/discounts/${discount.id}`}>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-600"
+                          onClick={() => {
+                            setDeleteDiscountId(discount.id);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <div className="text-muted-foreground">
+                      No active discounts found
+                    </div>
+                    <div className="mt-4">
+                      <Link href="/admin/discounts/new">
+                        <Button
+                          size="sm"
+                          className="bg-indigo-600 hover:bg-indigo-700"
+                        >
+                          Create Your First Discount
+                        </Button>
+                      </Link>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
       </div>
 
-      {/* Scheduled Discounts Section */}
+      {/* Scheduled Discounts */}
       <div>
-        <h2 className="text-xl font-semibold mb-4">Scheduled Discounts</h2>
+        <h2 className="text-lg font-medium mb-4">Scheduled Discounts</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {scheduledDiscounts.map((discount) => (
-            <div key={discount.id} className="bg-white p-4 rounded-md shadow">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-medium text-lg">{discount.code}</h3>
-                  <Badge className="bg-purple-100 text-purple-800 mt-1">
-                    Scheduled
-                  </Badge>
+          {loading ? (
+            <div className="col-span-2 bg-white rounded-lg p-5 shadow-sm flex justify-center items-center py-12">
+              <div className="flex flex-col items-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2" />
+                <div className="text-sm text-muted-foreground">
+                  Loading scheduled discounts...
                 </div>
-                <div className="flex space-x-1">
-                  <Button variant="ghost" size="icon" title="Edit">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="Delete"
-                    onClick={() => deleteDiscount(discount.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <p className="text-gray-600 mb-2">
-                {discount.type === "PERCENTAGE"
-                  ? `${discount.value}% off`
-                  : discount.type === "FIXED"
-                  ? `$${discount.value} off`
-                  : "Free shipping"}
-                {discount.code === "SUMMER30"
-                  ? " summer collection"
-                  : discount.code === "FLASH75"
-                  ? " flash sale - 75% off"
-                  : ""}
-              </p>
-              <div className="text-sm text-gray-500">
-                <div>Starts: {discount.startDate}</div>
-                <div>Ends: {discount.endDate}</div>
               </div>
             </div>
-          ))}
+          ) : scheduledDiscounts.length > 0 ? (
+            scheduledDiscounts.map((discount) => (
+              <div
+                key={discount.id}
+                className="bg-white rounded-lg p-5 shadow-sm border border-gray-100"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <Badge className="mb-2 bg-purple-100 text-purple-800 hover:bg-purple-100 font-normal">
+                      Scheduled
+                    </Badge>
+                    <h3 className="text-lg font-medium">{discount.code}</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {discount.type === "PERCENTAGE"
+                        ? `${discount.value}% off ${
+                            discount.productCategory || "all products"
+                          }`
+                        : discount.type === "FIXED"
+                        ? `${formatDiscountValue(discount)} off`
+                        : "Free shipping"}
+                    </p>
+                  </div>
+                  <div className="flex space-x-1">
+                    <Link href={`/admin/discounts/${discount.id}`}>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-red-600"
+                      onClick={() => {
+                        setDeleteDiscountId(discount.id);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500">
+                  <p>
+                    Starts:{" "}
+                    {format(new Date(discount.startDate), "MMM d, yyyy")}
+                  </p>
+                  <p>
+                    Ends: {format(new Date(discount.endDate), "MMM d, yyyy")}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-2 bg-white rounded-lg p-8 shadow-sm border border-gray-100 text-center">
+              <p className="text-muted-foreground mb-4">
+                No scheduled discounts found
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                Create a discount and set its status to &quot;Scheduled&quot; to
+                have it appear here.
+              </p>
+              <Link href="/admin/discounts/new">
+                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                  Create a Scheduled Discount
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        title="Delete Discount"
+        description="Are you sure you want to delete this discount? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={() =>
+          deleteDiscountId && handleDeleteDiscount(deleteDiscountId)
+        }
+      />
     </div>
   );
 }
