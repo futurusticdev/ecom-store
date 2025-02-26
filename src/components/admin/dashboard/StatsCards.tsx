@@ -1,27 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowUp, ArrowDown } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ArrowDown,
+  ArrowUp,
+  DollarSign,
+  ShoppingCart,
+  Users,
+  Percent,
+} from "lucide-react";
 import {
   getDashboardStats,
   DashboardStats,
 } from "@/services/dashboard-service";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function StatsCards() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStats = async () => {
-      setLoading(true);
       try {
+        setLoading(true);
+        setError(null);
         const data = await getDashboardStats();
         setStats(data);
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
+      } catch (err) {
+        console.error("Error fetching dashboard stats:", err);
+        setError(
+          "Failed to load dashboard statistics. Please try again later."
+        );
       } finally {
         setLoading(false);
       }
@@ -30,31 +41,25 @@ export function StatsCards() {
     fetchStats();
   }, []);
 
-  // Format currency
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  // Format percentage
-  const formatPercentage = (value: number) => {
-    const sign = value > 0 ? "+" : "";
-    return `${sign}${value.toFixed(1)}%`;
-  };
-
+  // Render loading skeletons
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[...Array(4)].map((_, index) => (
-          <Card key={index} className="bg-white">
-            <CardContent className="pt-6 pb-4">
-              <Skeleton className="h-4 w-24 mb-2" />
-              <Skeleton className="h-8 w-32 mb-2" />
-              <Skeleton className="h-4 w-40" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                <Skeleton className="h-4 w-24" />
+              </CardTitle>
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                <Skeleton className="h-8 w-20" />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                <Skeleton className="h-4 w-32" />
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -62,86 +67,70 @@ export function StatsCards() {
     );
   }
 
-  if (!stats) {
+  // Render error state
+  if (error) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="bg-white">
-          <CardContent className="pt-6 pb-4">
-            <p className="text-sm text-red-500">Failed to load stats</p>
-          </CardContent>
-        </Card>
+      <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
+        <p>{error}</p>
       </div>
     );
   }
 
-  const statsCards = [
+  // Render actual stats
+  if (!stats) return null;
+
+  const items = [
     {
-      label: "Total Sales",
-      value: formatCurrency(stats.totalSales.current),
-      change: formatPercentage(stats.totalSales.percentChange),
-      trend: stats.totalSales.percentChange > 0 ? "up" : "down",
-      comparison: `Compared to ${formatCurrency(
-        stats.totalSales.previous
-      )} last month`,
+      title: "Total Sales",
+      value: `$${stats.totalSales.current.toLocaleString()}`,
+      percentChange: stats.totalSales.percentChange,
+      icon: DollarSign,
     },
     {
-      label: "Total Orders",
-      value: stats.totalOrders.current.toString(),
-      change: formatPercentage(stats.totalOrders.percentChange),
-      trend: stats.totalOrders.percentChange > 0 ? "up" : "down",
-      comparison: `Compared to ${stats.totalOrders.previous} last month`,
+      title: "Total Orders",
+      value: stats.totalOrders.current.toLocaleString(),
+      percentChange: stats.totalOrders.percentChange,
+      icon: ShoppingCart,
     },
     {
-      label: "New Customers",
-      value: stats.newCustomers.current.toString(),
-      change: formatPercentage(stats.newCustomers.percentChange),
-      trend: stats.newCustomers.percentChange > 0 ? "up" : "down",
-      comparison: `Compared to ${stats.newCustomers.previous} last month`,
+      title: "New Customers",
+      value: stats.newCustomers.current.toLocaleString(),
+      percentChange: stats.newCustomers.percentChange,
+      icon: Users,
     },
     {
-      label: "Conversion Rate",
-      value: `${stats.conversionRate.current.toFixed(2)}%`,
-      change: formatPercentage(stats.conversionRate.percentChange),
-      trend: stats.conversionRate.percentChange > 0 ? "up" : "down",
-      comparison: `Compared to ${stats.conversionRate.previous.toFixed(
-        2
-      )}% last month`,
+      title: "Conversion Rate",
+      value: `${stats.conversionRate.current.toFixed(1)}%`,
+      percentChange: stats.conversionRate.percentChange,
+      icon: Percent,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {statsCards.map((stat, index) => (
-        <Card
-          key={index}
-          className="bg-white hover:shadow-md transition-shadow"
-        >
-          <CardContent className="pt-6 pb-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">
-                {stat.label}
-              </p>
-              <div className="flex items-center mb-1">
-                <span className="text-2xl font-bold">{stat.value}</span>
-                <Badge
-                  className={`ml-2 ${
-                    stat.trend === "up"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"
-                  }`}
-                >
-                  <span className="flex items-center text-xs">
-                    {stat.trend === "up" ? (
-                      <ArrowUp className="h-3 w-3 mr-1" />
-                    ) : (
-                      <ArrowDown className="h-3 w-3 mr-1" />
-                    )}
-                    {stat.change}
-                  </span>
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">{stat.comparison}</p>
-            </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {items.map((item) => (
+        <Card key={item.title}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+            <item.icon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{item.value}</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              {item.percentChange > 0 ? (
+                <ArrowUp className="h-3 w-3 text-emerald-500" />
+              ) : (
+                <ArrowDown className="h-3 w-3 text-rose-500" />
+              )}
+              <span
+                className={
+                  item.percentChange > 0 ? "text-emerald-500" : "text-rose-500"
+                }
+              >
+                {Math.abs(item.percentChange).toFixed(1)}%
+              </span>{" "}
+              from last month
+            </p>
           </CardContent>
         </Card>
       ))}
