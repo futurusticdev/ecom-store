@@ -19,9 +19,12 @@ import {
   User,
   ShoppingCart,
   Package,
+  Star,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { getRecentActivity, Activity } from "@/services/dashboard-service";
+import { formatDistanceToNow } from "date-fns";
 
 export function RecentActivity() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -48,15 +51,23 @@ export function RecentActivity() {
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case "user":
+      case "NEW_USER":
         return <User className="h-5 w-5 text-blue-500" />;
-      case "order":
+      case "ORDER_STATUS":
         return <ShoppingCart className="h-5 w-5 text-green-500" />;
-      case "product":
-        return <Package className="h-5 w-5 text-purple-500" />;
+      case "NEW_REVIEW":
+        return <Star className="h-5 w-5 text-yellow-500" />;
+      case "STORE_UPDATE":
+        return <Tag className="h-5 w-5 text-purple-500" />;
+      case "NEW_ACCOUNT":
+        return <Users className="h-5 w-5 text-indigo-500" />;
       default:
-        return <User className="h-5 w-5 text-gray-500" />;
+        return <Settings className="h-5 w-5 text-gray-500" />;
     }
+  };
+
+  const formatTimeAgo = (date: Date) => {
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
   };
 
   return (
@@ -91,12 +102,12 @@ export function RecentActivity() {
                 className="flex items-start gap-3 py-2 border-b last:border-0"
               >
                 <div className="rounded-full bg-muted p-2">
-                  {getActivityIcon(activity.icon)}
+                  {getActivityIcon(activity.type)}
                 </div>
                 <div>
-                  <p className="font-medium">{activity.type}</p>
+                  <p className="font-medium">{activity.message}</p>
                   <p className="text-sm text-muted-foreground">
-                    {activity.time}
+                    {formatTimeAgo(activity.timestamp)}
                   </p>
                 </div>
               </div>

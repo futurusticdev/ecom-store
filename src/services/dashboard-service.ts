@@ -1,194 +1,301 @@
 import { format, subDays } from "date-fns";
 import { fetchWithFallback, fetchWithCache } from "@/lib/data-utils";
-import {
-  fetchSalesData,
-  generateRealDashboardStats,
-  generateRealOrders,
-  generateRealActivity,
-} from "./external-data-service";
 
 // API endpoints
 const API_ENDPOINTS = {
-  STATS: "/api/dashboard/stats",
+  STATS: "/api/dashboard",
   RECENT_ORDERS: "/api/dashboard/recent-orders",
   RECENT_ACTIVITY: "/api/dashboard/recent-activity",
-  SALES_DATA: "/api/dashboard/sales-data",
+  SALES_DATA: "/api/dashboard/sales",
 };
 
 // Types for dashboard data
 export interface DashboardStats {
   totalSales: {
-    current: number;
-    previous: number;
-    percentChange: number;
+    value: number;
+    change: string;
   };
   totalOrders: {
-    current: number;
-    previous: number;
-    percentChange: number;
+    value: number;
+    change: string;
   };
   newCustomers: {
-    current: number;
-    previous: number;
-    percentChange: number;
+    value: number;
+    change: string;
   };
   conversionRate: {
-    current: number;
-    previous: number;
-    percentChange: number;
+    value: string;
+    change: string;
   };
 }
 
 export interface Order {
   id: string;
-  customer: string;
-  product: string;
-  date: string;
-  status: "Completed" | "Processing" | "Shipped" | "Cancelled";
-  amount: string;
+  customer: {
+    name: string;
+    email: string | null;
+    image: string | null;
+  };
+  status: string;
+  total: number;
+  date: Date;
+  items: {
+    id: string;
+    productName: string;
+    quantity: number;
+    price: number;
+    image: string | null;
+  }[];
 }
 
 export interface Activity {
   id: string;
   type: string;
-  time: string;
-  icon: "user" | "order" | "product";
+  message: string;
+  timestamp: Date;
+  data: Record<string, any>;
 }
 
-// Mock data generators
+export interface SalesDataPoint {
+  date: string;
+  amount: number;
+}
+
+export interface SalesSummary {
+  totalSales: number;
+  averageDailySales: number;
+  peakSalesDay: {
+    date: string;
+    amount: number;
+  };
+  period: string;
+}
+
+// Mock data generators for fallback
 function generateMockDashboardStats(): DashboardStats {
   return {
     totalSales: {
-      current: 24500,
-      previous: 21000,
-      percentChange: 16.7,
+      value: 86161000,
+      change: "1.4",
     },
     totalOrders: {
-      current: 450,
-      previous: 385,
-      percentChange: 16.9,
+      value: 2343165,
+      change: "2.1",
     },
     newCustomers: {
-      current: 89,
-      previous: 76,
-      percentChange: 17.1,
+      value: 520920,
+      change: "0.0",
     },
     conversionRate: {
-      current: 3.2,
-      previous: 2.8,
-      percentChange: 14.3,
+      value: "3.2",
+      change: "0.7",
     },
   };
 }
 
 function generateMockRecentOrders(limit: number = 5): Order[] {
-  const statuses: ("Completed" | "Processing" | "Shipped" | "Cancelled")[] = [
-    "Completed",
-    "Processing",
-    "Shipped",
-    "Cancelled",
+  const statuses = ["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+  const productNames = [
+    "Premium Subscription",
+    "Gold Package",
+    "Silver Package",
+    "Digital Asset Bundle",
+    "Enterprise License",
+  ];
+  const customerNames = [
+    "Sarah Johnson",
+    "Michael Chen",
+    "Emily Wilson",
+    "David Rodriguez",
+    "Jennifer Lee",
   ];
 
   return Array.from({ length: limit }, (_, i) => ({
-    id: `ORD-${1000 + i}`,
-    customer: `Customer ${i + 1}`,
-    product: `Product ${i + 1}`,
-    date: `Jan ${10 + i}, 2023`,
+    id: `ORD-${7880 + i}`,
+    customer: {
+      name: customerNames[i % customerNames.length],
+      email: `customer${i}@example.com`,
+      image: null,
+    },
     status: statuses[i % statuses.length],
-    amount: `$${(100 + i * 10).toFixed(2)}`,
+    total: [861610, 23713, 10, 22, 6093][i % 5],
+    date: new Date(2025, 1, 22 + i),
+    items: [
+      {
+        id: `item-${1000 + i}`,
+        productName: productNames[i % productNames.length],
+        quantity: 1,
+        price: [861610, 23713, 10, 22, 6093][i % 5],
+        image: null,
+      },
+    ],
   }));
 }
 
 function generateMockRecentActivity(limit: number = 5): Activity[] {
-  const icons: ("user" | "order" | "product")[] = ["user", "order", "product"];
-  const times = [
-    "2 minutes ago",
-    "15 minutes ago",
-    "1 hour ago",
-    "3 hours ago",
-    "5 hours ago",
+  const activities = [
+    {
+      type: "NEW_USER",
+      message: "New customer registered",
+      timeAgo: "2 minutes ago",
+    },
+    {
+      type: "ORDER_STATUS",
+      message: "Order #ORD-7891 cancelled",
+      timeAgo: "15 minutes ago",
+    },
+    {
+      type: "STORE_UPDATE",
+      message: "Premium Subscription added to store",
+      timeAgo: "1 hour ago",
+    },
+    {
+      type: "NEW_ACCOUNT",
+      message: "New business account created",
+      timeAgo: "3 hours ago",
+    },
+    {
+      type: "ORDER_STATUS",
+      message: "Order #ORD-7885 shipped",
+      timeAgo: "5 hours ago",
+    },
   ];
 
-  return Array.from({ length: limit }, (_, i) => ({
-    id: `act-${1000 + i}`,
-    type: `Activity ${i + 1}`,
-    time: times[i % times.length],
-    icon: icons[i % icons.length],
-  }));
+  return Array.from({ length: Math.min(limit, activities.length) }, (_, i) => {
+    const now = new Date();
+    const timestamp = new Date(now);
+
+    // Calculate timestamp based on timeAgo
+    if (activities[i].timeAgo.includes("minutes")) {
+      const minutes = parseInt(activities[i].timeAgo);
+      timestamp.setMinutes(now.getMinutes() - minutes);
+    } else if (activities[i].timeAgo.includes("hour")) {
+      const hours = parseInt(activities[i].timeAgo);
+      timestamp.setHours(now.getHours() - hours);
+    }
+
+    return {
+      id: `act-${1000 + i}`,
+      type: activities[i].type,
+      message: activities[i].message,
+      timestamp,
+      data: {},
+    };
+  });
 }
 
-function generateMockSalesData(
-  days: number = 7
-): { date: string; sales: number }[] {
-  const dates = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  return Array.from({ length: days }, (_, i) => ({
-    date: dates[i % dates.length],
-    sales: Math.floor(Math.random() * 5000) + 1000,
-  }));
-}
+function generateMockSalesData(period: string = "7d"): {
+  salesData: SalesDataPoint[];
+  summary: SalesSummary;
+} {
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  const endDate = new Date();
+  const salesData: SalesDataPoint[] = [];
 
-// Public API - prioritize real data
-export async function getDashboardStats(): Promise<DashboardStats> {
-  // Always return real data for the dashboard stats
-  try {
-    return await generateRealDashboardStats();
-  } catch (error) {
-    console.error("Error fetching real dashboard stats:", error);
-    // Fall back to mock data only if real data fails
-    return await fetchWithFallback<DashboardStats>(
-      API_ENDPOINTS.STATS,
-      generateRealDashboardStats,
-      generateMockDashboardStats
-    );
+  let totalSales = 0;
+  let maxSales = 0;
+  let maxSalesDate = "";
+
+  for (let i = 0; i < days; i++) {
+    const date = new Date();
+    date.setDate(endDate.getDate() - (days - i - 1));
+    const dateString = date.toISOString().split("T")[0];
+
+    // Generate higher sales on weekends
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const amount =
+      Math.floor(Math.random() * (isWeekend ? 120000 : 60000)) + 20000;
+
+    salesData.push({
+      date: dateString,
+      amount,
+    });
+
+    totalSales += amount;
+
+    if (amount > maxSales) {
+      maxSales = amount;
+      maxSalesDate = dateString;
+    }
   }
+
+  return {
+    salesData,
+    summary: {
+      totalSales,
+      averageDailySales: totalSales / days,
+      peakSalesDay: {
+        date: maxSalesDate,
+        amount: maxSales,
+      },
+      period,
+    },
+  };
+}
+
+// Public API functions
+export async function getDashboardStats(): Promise<DashboardStats> {
+  return await fetchWithFallback<DashboardStats>(
+    API_ENDPOINTS.STATS,
+    async () => {
+      const response = await fetch(API_ENDPOINTS.STATS);
+      if (!response.ok) throw new Error("Failed to fetch dashboard stats");
+      const data = await response.json();
+      return data.stats;
+    },
+    generateMockDashboardStats
+  );
 }
 
 export async function getRecentOrders(limit: number = 5): Promise<Order[]> {
-  // Always return real orders
-  try {
-    return await generateRealOrders(limit);
-  } catch (error) {
-    console.error("Error fetching real orders:", error);
-    // Fall back to mock data only if real data fails
-    return await fetchWithFallback<Order[]>(
-      `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`,
-      () => generateRealOrders(limit),
-      () => generateMockRecentOrders(limit)
-    );
-  }
+  return await fetchWithFallback<Order[]>(
+    `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`,
+    async () => {
+      const response = await fetch(
+        `${API_ENDPOINTS.RECENT_ORDERS}?limit=${limit}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch recent orders");
+      const data = await response.json();
+      return data.orders;
+    },
+    () => generateMockRecentOrders(limit)
+  );
 }
 
 export async function getRecentActivity(
   limit: number = 5
 ): Promise<Activity[]> {
-  // Always return real activity
-  try {
-    return await generateRealActivity(limit);
-  } catch (error) {
-    console.error("Error fetching real activity:", error);
-    // Fall back to mock data only if real data fails
-    return await fetchWithFallback<Activity[]>(
-      `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`,
-      () => generateRealActivity(limit),
-      () => generateMockRecentActivity(limit)
-    );
-  }
+  return await fetchWithFallback<Activity[]>(
+    `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`,
+    async () => {
+      const response = await fetch(
+        `${API_ENDPOINTS.RECENT_ACTIVITY}?limit=${limit}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch recent activity");
+      const data = await response.json();
+      return data.activities;
+    },
+    () => generateMockRecentActivity(limit)
+  );
 }
 
 export async function getSalesData(
-  days: number = 7
-): Promise<{ date: string; sales: number }[]> {
-  // Always return real sales data
-  try {
-    return await fetchSalesData(days);
-  } catch (error) {
-    console.error("Error fetching real sales data:", error);
-    // Fall back to cached or mock data only if real data fails
-    return await fetchWithCache<{ date: string; sales: number }[]>(
-      `${API_ENDPOINTS.SALES_DATA}?days=${days}`,
-      `sales_data_${days}`,
-      () => fetchSalesData(days),
-      () => generateMockSalesData(days)
-    );
-  }
+  period: string = "7d"
+): Promise<{ salesData: SalesDataPoint[]; summary: SalesSummary }> {
+  return await fetchWithCache<{
+    salesData: SalesDataPoint[];
+    summary: SalesSummary;
+  }>(
+    `${API_ENDPOINTS.SALES_DATA}?period=${period}`,
+    `sales_data_${period}`,
+    async () => {
+      const response = await fetch(
+        `${API_ENDPOINTS.SALES_DATA}?period=${period}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch sales data");
+      return await response.json();
+    },
+    () => generateMockSalesData(period)
+  );
 }

@@ -9,7 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getSalesData } from "@/services/dashboard-service";
+import {
+  getSalesData,
+  SalesDataPoint,
+  SalesSummary,
+} from "@/services/dashboard-service";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AreaChart,
@@ -21,14 +25,11 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { AlertCircle } from "lucide-react";
-
-interface SalesData {
-  date: string;
-  sales: number;
-}
+import { format } from "date-fns";
 
 export function SalesChart() {
-  const [salesData, setSalesData] = useState<SalesData[]>([]);
+  const [salesData, setSalesData] = useState<SalesDataPoint[]>([]);
+  const [summary, setSummary] = useState<SalesSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<"7d" | "30d" | "90d">("7d");
@@ -39,11 +40,9 @@ export function SalesChart() {
         setLoading(true);
         setError(null);
 
-        // Determine days based on timeframe
-        const days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
-
-        const data = await getSalesData(days);
-        setSalesData(data);
+        const result = await getSalesData(timeframe);
+        setSalesData(result.salesData);
+        setSummary(result.summary);
       } catch (err) {
         console.error("Error fetching sales data:", err);
         setError("Failed to load sales data. Please try again later.");
@@ -69,12 +68,18 @@ export function SalesChart() {
     }).format(value);
   };
 
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, "MMM dd");
+  };
+
   // Custom tooltip component
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border rounded-md shadow-sm p-2 text-sm">
-          <p className="font-medium">{label}</p>
+          <p className="font-medium">{formatDate(label)}</p>
           <p className="text-primary">
             Sales: {formatCurrency(payload[0].value)}
           </p>
@@ -137,6 +142,7 @@ export function SalesChart() {
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={{ stroke: "#e5e7eb" }}
+                  tickFormatter={formatDate}
                 />
                 <YAxis
                   tick={{ fontSize: 12 }}
@@ -147,7 +153,7 @@ export function SalesChart() {
                 <Tooltip content={<CustomTooltip />} />
                 <Area
                   type="monotone"
-                  dataKey="sales"
+                  dataKey="amount"
                   stroke="#8884d8"
                   fill="url(#colorSales)"
                   strokeWidth={2}

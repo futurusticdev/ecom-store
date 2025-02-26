@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { getRecentOrders, Order } from "@/services/dashboard-service";
 import { AlertCircle } from "lucide-react";
+import { format } from "date-fns";
 
 export function RecentOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -48,18 +49,25 @@ export function RecentOrders() {
   }, []);
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
+    switch (status.toUpperCase()) {
+      case "DELIVERED":
         return "bg-green-100 text-green-800";
-      case "Processing":
+      case "PROCESSING":
         return "bg-blue-100 text-blue-800";
-      case "Shipped":
+      case "SHIPPED":
         return "bg-purple-100 text-purple-800";
-      case "Cancelled":
+      case "CANCELLED":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
   };
 
   return (
@@ -97,21 +105,26 @@ export function RecentOrders() {
                 className="flex items-center justify-between py-2 border-b last:border-0"
               >
                 <div>
-                  <p className="font-medium">{order.product}</p>
+                  <p className="font-medium">
+                    {order.items[0]?.productName || "Unknown Product"}
+                  </p>
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-muted-foreground">
-                      {order.customer}
+                      {order.customer.name}
                     </p>
                     <span className="text-xs text-muted-foreground">•</span>
                     <p className="text-sm text-muted-foreground">
-                      {order.date}
+                      {format(new Date(order.date), "MMM dd, yyyy")}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium">{order.amount}</p>
+                  <p className="text-sm font-medium">
+                    {formatCurrency(order.total)}
+                  </p>
                   <Badge className={getStatusColor(order.status)}>
-                    {order.status}
+                    {order.status.charAt(0) +
+                      order.status.slice(1).toLowerCase()}
                   </Badge>
                 </div>
               </div>

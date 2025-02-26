@@ -82,26 +82,26 @@ export function StatsCards() {
   const items = [
     {
       title: "Total Sales",
-      value: `$${stats.totalSales.current.toLocaleString()}`,
-      percentChange: stats.totalSales.percentChange,
+      value: `$${stats.totalSales.value.toLocaleString()}`,
+      percentChange: parseFloat(stats.totalSales.change),
       icon: DollarSign,
     },
     {
       title: "Total Orders",
-      value: stats.totalOrders.current.toLocaleString(),
-      percentChange: stats.totalOrders.percentChange,
+      value: stats.totalOrders.value.toLocaleString(),
+      percentChange: parseFloat(stats.totalOrders.change),
       icon: ShoppingCart,
     },
     {
       title: "New Customers",
-      value: stats.newCustomers.current.toLocaleString(),
-      percentChange: stats.newCustomers.percentChange,
+      value: stats.newCustomers.value.toLocaleString(),
+      percentChange: parseFloat(stats.newCustomers.change),
       icon: Users,
     },
     {
       title: "Conversion Rate",
-      value: `${stats.conversionRate.current.toFixed(1)}%`,
-      percentChange: stats.conversionRate.percentChange,
+      value: `${stats.conversionRate.value}%`,
+      percentChange: parseFloat(stats.conversionRate.change),
       icon: Percent,
     },
   ];
@@ -116,21 +116,25 @@ export function StatsCards() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{item.value}</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
               {item.percentChange > 0 ? (
                 <ArrowUp className="h-3 w-3 text-emerald-500" />
-              ) : (
+              ) : item.percentChange < 0 ? (
                 <ArrowDown className="h-3 w-3 text-rose-500" />
-              )}
+              ) : null}
               <span
                 className={
-                  item.percentChange > 0 ? "text-emerald-500" : "text-rose-500"
+                  item.percentChange > 0
+                    ? "text-emerald-500"
+                    : item.percentChange < 0
+                    ? "text-rose-500"
+                    : ""
                 }
               >
                 {Math.abs(item.percentChange).toFixed(1)}%
               </span>{" "}
               from last month
-            </p>
+            </div>
           </CardContent>
         </Card>
       ))}
