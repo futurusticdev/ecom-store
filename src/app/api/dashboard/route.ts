@@ -326,7 +326,7 @@ export async function GET() {
   } finally {
     // Always disconnect from the database to prevent connection pool issues
     await prisma.$disconnect().catch((err) => {
-      safeLog("Error disconnecting from database:");
+      safeLog("Error disconnecting from database:", err);
     });
   }
 }

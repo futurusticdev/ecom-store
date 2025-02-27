@@ -108,6 +108,8 @@ model User {
   favorites             Product[]               @relation("UserFavorites")
   notificationSettings  NotificationPreference[]
   reviews               Review[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @default(now())
 
   @@index([email])
 }
