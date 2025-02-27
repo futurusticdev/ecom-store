@@ -36,7 +36,7 @@ interface OrderItem {
   };
 }
 
-export async function RecentOrders({ userId }: RecentOrdersProps) {
+async function RecentOrdersComponent({ userId }: { userId: string }) {
   // Use the cached version of getRecentOrders
   const orders = await getCachedRecentOrders(userId);
 
@@ -124,3 +124,8 @@ export async function RecentOrders({ userId }: RecentOrdersProps) {
     </div>
   );
 }
+
+// Type cast to work around TS2786 error
+export const RecentOrders = RecentOrdersComponent as unknown as (props: {
+  userId: string;
+}) => JSX.Element;

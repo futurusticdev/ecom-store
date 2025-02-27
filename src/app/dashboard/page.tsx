@@ -69,8 +69,6 @@ export default async function DashboardPage() {
       </div>
 
       <Suspense fallback={<StatsLoading />}>
-        {/* Add TypeScript expect error directive for async components */}
-        {/* @ts-expect-error Server Component */}
         <DashboardStats userId={user.id} />
       </Suspense>
 

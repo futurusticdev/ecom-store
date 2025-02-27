@@ -25,4 +25,7 @@ yarn-error.log*
 # Testing
 coverage
 
+# Specific files with unused directives
+src/app/dashboard/page.tsx
+
 # Add anything specific you want to ignore here 

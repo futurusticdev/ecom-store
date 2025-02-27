@@ -1,19 +1,19 @@
 async function OrderListComponent({
   userId,
   page,
-  status
+  status,
 }: {
   userId: string;
   page: number;
   status?: string;
 }) {
-  // ... async operations
-  return (
-    // ... your JSX
-  );
+  // Simple placeholder return
+  return <div>Order List Content Would Be Here</div>;
 }
 
 // Type cast to work around TS2786 error
-export const OrderList = OrderListComponent as unknown as (
-  props: { userId: string; page: number; status?: string }
-) => JSX.Element; 
+export const OrderList = OrderListComponent as unknown as (props: {
+  userId: string;
+  page: number;
+  status?: string;
+}) => JSX.Element;

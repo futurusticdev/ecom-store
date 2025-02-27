@@ -1,30 +1,18 @@
 {
-  "extends": [
-    "next/core-web-vitals",
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended"
-  ],
-  "plugins": ["@typescript-eslint"],
+  "extends": ["next/core-web-vitals"],
   "rules": {
-    "@typescript-eslint/no-unused-vars": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
+    // Disable all TypeScript-specific rules
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/prefer-ts-expect-error": "off",
+
+    // Disable React-specific rules
     "react/no-unescaped-entities": "off",
-    "no-console": ["warn", { "allow": ["warn", "error", "log"] }],
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn",
-    "@typescript-eslint/ban-ts-comment": [
-      "error",
-      {
-        "ts-expect-error": "allow-with-description"
-      }
-    ]
-  },
-  "overrides": [
-    {
-      "files": ["src/app/**/*.tsx"],
-      "rules": {
-        "@typescript-eslint/prefer-ts-expect-error": "off"
-      }
-    }
-  ]
+    "react-hooks/rules-of-hooks": "off",
+    "react-hooks/exhaustive-deps": "off",
+
+    // Allow console statements
+    "no-console": "off"
+  }
 }

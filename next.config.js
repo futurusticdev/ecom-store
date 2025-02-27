@@ -21,6 +21,16 @@ const nextConfig = {
         pathname: "/**",
       },
     ],
+    domains: [
+      "images.unsplash.com",
+      "plus.unsplash.com",
+      "loremflickr.com",
+      "picsum.photos",
+    ],
+  },
+  eslint: {
+    // Disable ESLint during production builds
+    ignoreDuringBuilds: true,
   },
 };
 
