@@ -47,7 +47,32 @@ const getCachedAddresses = unstable_cache(
   { revalidate: 60 } // Cache for 60 seconds
 );
 
-export async function AddressList({
+// This is a Server Component that fetches data
+export async function getAddressListData({
+  userId,
+  page = 1,
+  limit = 10,
+}: AddressListProps) {
+  return getCachedAddresses({
+    userId,
+    page,
+    limit,
+  });
+}
+
+// This is the actual React component that renders the UI
+export function AddressList({
+  userId,
+  page = 1,
+  limit = 10,
+}: AddressListProps) {
+  // The parent component should handle the data fetching and pass it as props
+  // This component just renders the UI based on the data
+  return <AddressListContent userId={userId} page={page} limit={limit} />;
+}
+
+// This is the async Server Component that fetches and renders
+export async function AddressListContent({
   userId,
   page = 1,
   limit = 10,

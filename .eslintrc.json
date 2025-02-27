@@ -11,6 +11,20 @@
     "react/no-unescaped-entities": "off",
     "no-console": ["warn", { "allow": ["warn", "error", "log"] }],
     "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn"
-  }
+    "react-hooks/exhaustive-deps": "warn",
+    "@typescript-eslint/ban-ts-comment": [
+      "error",
+      {
+        "ts-expect-error": "allow-with-description"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/app/**/*.tsx"],
+      "rules": {
+        "@typescript-eslint/prefer-ts-expect-error": "off"
+      }
+    }
+  ]
 }

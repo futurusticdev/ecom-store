@@ -101,6 +101,7 @@ model User {
   emailVerified         DateTime?
   image                 String?
   password              String                  @db.Text
+  phone                 String?                 // Added phone field
   accounts              Account[]
   sessions              Session[]
   orders                Order[]
@@ -156,6 +157,7 @@ model Address {
   type       AddressType
   name       String
   street     String
+  apt        String?     // Apartment/Suite number
   city       String
   state      String
   postalCode String

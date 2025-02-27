@@ -150,26 +150,34 @@ export async function GET(request: Request) {
     });
 
     // Transform the data to a more usable format for the frontend
-    const formattedOrders = orders.map((order) => ({
-      id: order.id,
-      orderId: `#ORD-${order.id.toString().padStart(4, "0")}`,
-      customer: {
-        name: order.user?.name || "Anonymous",
-        email: order.user?.email || null,
-        image: order.user?.image || null,
-      },
-      status: order.status,
-      paymentStatus: order.paymentStatus,
-      total: order.total,
-      date: order.createdAt,
-      items: order.items.map((item) => ({
-        id: item.id,
-        productName: item.product.name,
-        quantity: item.quantity,
-        price: item.price,
-        image: item.product.images[0] || null,
-      })),
-    }));
+    const formattedOrders = orders.map((order) => {
+      // Calculate the actual total based on current item quantities and prices
+      const calculatedTotal = order.items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+
+      return {
+        id: order.id,
+        orderId: `#ORD-${order.id.toString().padStart(4, "0")}`,
+        customer: {
+          name: order.user?.name || "Anonymous",
+          email: order.user?.email || null,
+          image: order.user?.image || null,
+        },
+        status: order.status,
+        paymentStatus: order.paymentStatus,
+        total: calculatedTotal, // Use the calculated total instead of order.total
+        date: order.createdAt,
+        items: order.items.map((item) => ({
+          id: item.id,
+          productName: item.product.name,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.product.images[0] || null,
+        })),
+      };
+    });
 
     return NextResponse.json({
       orders: formattedOrders,

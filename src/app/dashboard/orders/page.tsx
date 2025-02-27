@@ -83,6 +83,8 @@ export default async function OrdersPage({
       <OrderFilters />
 
       <Suspense fallback={<OrderListSkeleton />}>
+        {/* Add TypeScript expect error directive for async components */}
+        {/* @ts-expect-error Server Component */}
         <OrderList userId={userId} page={pageNumber} status={statusParam} />
       </Suspense>
     </div>

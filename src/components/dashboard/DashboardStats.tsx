@@ -17,7 +17,7 @@ const getCachedUserStats = unstable_cache(
   { revalidate: 60 } // Cache for 60 seconds
 );
 
-export async function DashboardStats({ userId }: DashboardStatsProps) {
+async function DashboardStatsComponent({ userId }: { userId: string }) {
   const stats = await getCachedUserStats(userId);
 
   // Helper function to determine change type
@@ -106,3 +106,8 @@ export async function DashboardStats({ userId }: DashboardStatsProps) {
     </div>
   );
 }
+
+// Type cast to work around TS2786 error
+export const DashboardStats = DashboardStatsComponent as unknown as (props: {
+  userId: string;
+}) => JSX.Element;

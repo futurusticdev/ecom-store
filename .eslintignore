@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Next.js build outputs
+.next/
+out/
+build
+dist
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+*.pem
+
+# Local env files
+.env*.local
+.env
+
+# Testing
+coverage
+
+# Add anything specific you want to ignore here 

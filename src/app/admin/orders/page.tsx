@@ -21,6 +21,7 @@ import {
   ChevronDown,
   Download,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface OrderItem {
   id: string;
@@ -73,6 +74,8 @@ export default function OrdersPage() {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>("");
 
+  const router = useRouter();
+
   // Fetch orders with filters using useCallback
   const fetchOrders = useCallback(
     async (page: number = 1) => {
@@ -100,10 +103,13 @@ export default function OrdersPage() {
         params.append("sortBy", sortBy || "date");
         params.append("sortOrder", "desc");
 
+        // Add a cache-busting parameter to ensure we get fresh data
+        params.append("_t", Date.now().toString());
+
         const apiUrl = `/api/orders?${params.toString()}`;
         console.log("Fetching orders from:", apiUrl);
 
-        const response = await fetch(apiUrl);
+        const response = await fetch(apiUrl, { cache: "no-store" });
         console.log("API Response status:", response.status);
 
         if (!response.ok) {
@@ -125,9 +131,21 @@ export default function OrdersPage() {
     [statusFilter, paymentStatusFilter, dateFilter, sortBy]
   );
 
-  // Initial fetch
+  // Initial fetch and refresh on route change
   useEffect(() => {
     fetchOrders();
+
+    // Add event listener for route changes to refresh data
+    const handleRouteChange = () => {
+      console.log("Route changed, refreshing orders data");
+      fetchOrders();
+    };
+
+    window.addEventListener("focus", handleRouteChange);
+
+    return () => {
+      window.removeEventListener("focus", handleRouteChange);
+    };
   }, [fetchOrders]);
 
   // Apply filters
@@ -168,7 +186,8 @@ export default function OrdersPage() {
 
   const handleEditOrder = (orderId: string) => {
     console.log("Edit order:", orderId);
-    // Implementation for editing order
+    // Add a timestamp to force a refresh when returning from the edit page
+    router.push(`/admin/orders/${orderId}/edit?t=${Date.now()}`);
   };
 
   const handleDeleteOrder = (orderId: string) => {
@@ -278,6 +297,31 @@ export default function OrdersPage() {
         <h1 className="text-2xl font-bold">Orders</h1>
 
         <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            className="flex items-center px-3 py-2"
+            onClick={() => fetchOrders(pagination.page)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 mr-2"
+            >
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+            <span>Refresh</span>
+          </Button>
+
           <div className="relative">
             <Button variant="outline" className="flex items-center px-3 py-2">
               <Filter className="h-4 w-4 mr-2" />
@@ -434,7 +478,19 @@ export default function OrdersPage() {
                       <span>{order.customer.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{order.items[0]?.productName}</TableCell>
+                  <TableCell>
+                    {order.items[0]?.productName}
+                    {order.items[0]?.quantity > 1 && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        (Qty: {order.items[0]?.quantity})
+                      </span>
+                    )}
+                    {order.items.length > 1 && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        +{order.items.length - 1} more items
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {format(new Date(order.date), "MMM dd, yyyy")}
                   </TableCell>
