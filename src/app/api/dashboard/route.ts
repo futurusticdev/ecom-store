@@ -19,12 +19,26 @@ interface UniqueCustomer {
   };
 }
 
+// Safe logging function to avoid source map errors
+function safeLog(message: string, error?: unknown) {
+  console.log(message);
+  if (error) {
+    if (error instanceof Error) {
+      // Log error message and name separately to avoid source map issues
+      console.log(`Error name: ${error.name}`);
+      console.log(`Error message: ${error.message}`);
+    } else {
+      console.log(`Unknown error type: ${typeof error}`);
+    }
+  }
+}
+
 export async function GET() {
   try {
     // First check database connection
     const isConnected = await checkDatabaseConnection();
     if (!isConnected) {
-      console.log("Database connection failed");
+      safeLog("Database connection failed");
       return NextResponse.json(
         {
           error: "Database connection failed",
@@ -63,7 +77,7 @@ export async function GET() {
         },
       });
     } catch (orderError) {
-      console.log("Error fetching current month orders:", orderError);
+      safeLog("Error fetching current month orders:", orderError);
       return NextResponse.json(
         { error: "Error fetching orders data" },
         { status: 500 }
@@ -88,7 +102,7 @@ export async function GET() {
         },
       });
     } catch (customerError) {
-      console.log("Error fetching new customers:", customerError);
+      safeLog("Error fetching new customers:", customerError);
       return NextResponse.json(
         { error: "Error fetching customer data" },
         { status: 500 }
@@ -128,7 +142,7 @@ export async function GET() {
         },
       });
     } catch (conversionError) {
-      console.log("Error calculating conversion rate:", conversionError);
+      safeLog("Error calculating conversion rate:", conversionError);
       return NextResponse.json(
         { error: "Error calculating conversion metrics" },
         { status: 500 }
@@ -195,7 +209,7 @@ export async function GET() {
         },
       });
     } catch (previousMonthError) {
-      console.log("Error fetching previous month data:", previousMonthError);
+      safeLog("Error fetching previous month data:", previousMonthError);
       return NextResponse.json(
         { error: "Error fetching comparison data" },
         { status: 500 }
@@ -245,35 +259,39 @@ export async function GET() {
         ? conversionRate
         : 0; // If previous month was 0 but we have conversion now, use current rate
 
-    // Add debug logging
+    // Add debug logging - use safe string concatenation to avoid source map issues
     console.log("===== DASHBOARD STATS DEBUG =====");
     console.log(
-      `Date ranges: Current (${oneMonthAgo.toISOString().split("T")[0]} to ${
-        now.toISOString().split("T")[0]
-      }), Previous (${twoMonthsAgo.toISOString().split("T")[0]} to ${
-        oneMonthAgo.toISOString().split("T")[0]
-      })`
+      "Date ranges: Current (" +
+        oneMonthAgo.toISOString().split("T")[0] +
+        " to " +
+        now.toISOString().split("T")[0] +
+        "), Previous (" +
+        twoMonthsAgo.toISOString().split("T")[0] +
+        " to " +
+        oneMonthAgo.toISOString().split("T")[0] +
+        ")"
     );
     console.log("Current month:");
-    console.log(`- Total sales: ${totalSales}`);
-    console.log(`- Total orders: ${totalOrders}`);
-    console.log(`- New customers: ${newCustomers}`);
-    console.log(`- Conversion rate: ${conversionRate.toFixed(1)}%`);
+    console.log("- Total sales: " + totalSales);
+    console.log("- Total orders: " + totalOrders);
+    console.log("- New customers: " + newCustomers);
+    console.log("- Conversion rate: " + conversionRate.toFixed(1) + "%");
     console.log("Previous month:");
-    console.log(`- Previous month sales: ${previousMonthSales}`);
-    console.log(`- Previous month orders: ${previousMonthOrderCount}`);
-    console.log(`- Previous month new customers: ${previousMonthNewCustomers}`);
+    console.log("- Previous month sales: " + previousMonthSales);
+    console.log("- Previous month orders: " + previousMonthOrderCount);
+    console.log("- Previous month new customers: " + previousMonthNewCustomers);
     console.log(
-      `- Previous month conversion rate: ${previousMonthConversionRate.toFixed(
-        1
-      )}%`
+      "- Previous month conversion rate: " +
+        previousMonthConversionRate.toFixed(1) +
+        "%"
     );
     console.log("Calculated percentage changes:");
-    console.log(`- Sales change: ${salesChange.toFixed(1)}%`);
-    console.log(`- Orders change: ${ordersChange.toFixed(1)}%`);
-    console.log(`- Customers change: ${customersChange.toFixed(1)}%`);
+    console.log("- Sales change: " + salesChange.toFixed(1) + "%");
+    console.log("- Orders change: " + ordersChange.toFixed(1) + "%");
+    console.log("- Customers change: " + customersChange.toFixed(1) + "%");
     console.log(
-      `- Conversion rate change: ${conversionRateChange.toFixed(1)}%`
+      "- Conversion rate change: " + conversionRateChange.toFixed(1) + "%"
     );
     console.log("================================");
 
@@ -298,12 +316,8 @@ export async function GET() {
       },
     });
   } catch (error) {
-    // Fix for Next.js 15 error handling issue
-    if (error instanceof Error) {
-      console.log("Error stack:", error.stack);
-    } else {
-      console.log("Unknown error:", error);
-    }
+    // Modified error handling to avoid source map issues
+    safeLog("Error in dashboard API:", error);
 
     return NextResponse.json(
       { error: "Error fetching dashboard statistics" },
@@ -312,7 +326,7 @@ export async function GET() {
   } finally {
     // Always disconnect from the database to prevent connection pool issues
     await prisma.$disconnect().catch((err) => {
-      console.log("Error disconnecting from database:", err);
+      safeLog("Error disconnecting from database:");
     });
   }
 }
