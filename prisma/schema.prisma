@@ -121,17 +121,18 @@ model VerificationToken {
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  status      OrderStatus @default(PROCESSING)
-  total       Float
-  items       OrderItem[]
-  discountId  String?
-  discount    Discount?   @relation("OrderDiscount", fields: [discountId], references: [id])
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  status        OrderStatus    @default(PROCESSING)
+  paymentStatus PaymentStatus  @default(PENDING)
+  total         Float
+  items         OrderItem[]
+  discountId    String?
+  discount      Discount?      @relation("OrderDiscount", fields: [discountId], references: [id])
   discountAmount Float?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   
   @@index([discountId])
 }
@@ -167,6 +168,13 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
 }
 
 enum AddressType {
